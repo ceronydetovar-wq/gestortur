@@ -69,6 +69,25 @@
     </div>
 
     <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
+      <section class="bg-white border rounded-3xl p-5 shadow-sm space-y-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-semibold">Conexión a Supabase</h3>
+            <p class="text-sm text-slate-600">Copia la URL y la anon key desde Project Settings → API en tu proyecto de Supabase. Después crea una cuenta en la app para que los cambios se guarden en la nube.</p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-sm" :class="supabaseConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">{{ supabaseConnected ? 'Conectado' : 'Pendiente' }}</span>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3">
+          <input v-model="supabaseConfig.url" placeholder="https://tu-proyecto.supabase.co" class="w-full border rounded-xl px-3 py-2" />
+          <input v-model="supabaseConfig.anonKey" placeholder="anon key" class="w-full border rounded-xl px-3 py-2" />
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white" @click="saveSupabaseConfig">Guardar conexión</button>
+          <button class="px-4 py-2 rounded-xl border border-slate-200" @click="testSupabaseConnection">Probar conexión</button>
+        </div>
+        <p class="text-xs text-slate-500">También puedes pasar las credenciales por la URL así: ?supabaseUrl=https://tu-proyecto.supabase.co&amp;supabaseKey=TU_ANON_KEY</p>
+      </section>
+
       <div v-if="!user" class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center py-10">
         <div class="space-y-6">
           <div class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">Panel operativo para equipos</div>
@@ -150,24 +169,6 @@
         <section v-show="tab==='gantt'" class="bg-white border rounded-2xl p-4 shadow-sm"><h2 class="font-semibold text-lg mb-4">Diagrama de Gantt</h2><div id="gantt-container" class="overflow-auto"><div id="gantt" class="min-w-full"></div></div></section>
         <section v-show="tab==='graficos'" class="bg-white border rounded-2xl p-4 shadow-sm"><h2 class="font-semibold text-lg mb-4">Gráficos de desempeño</h2><div class="grid md:grid-cols-2 gap-6"><div><h3 class="font-medium mb-2 text-sm">Tareas por estado</h3><div class="relative h-72"><canvas id="chart-estado"></canvas></div></div><div><h3 class="font-medium mb-2 text-sm">Turnos por prioridad</h3><div class="relative h-72"><canvas id="chart-prioridad-turnos"></canvas></div></div></div></section>
 
-        <section class="bg-white border rounded-3xl p-5 shadow-sm space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 class="font-semibold">Conexión a Supabase</h3>
-              <p class="text-sm text-slate-600">Copia la URL y la anon key desde Project Settings → API en tu proyecto de Supabase. Después crea una cuenta en la app para que los cambios se guarden en la nube.</p>
-            </div>
-            <span class="px-3 py-1 rounded-full text-sm" :class="supabaseConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">{{ supabaseConnected ? 'Conectado' : 'Pendiente' }}</span>
-          </div>
-          <div class="grid md:grid-cols-2 gap-3">
-            <input v-model="supabaseConfig.url" placeholder="https://tu-proyecto.supabase.co" class="w-full border rounded-xl px-3 py-2" />
-            <input v-model="supabaseConfig.anonKey" placeholder="anon key" class="w-full border rounded-xl px-3 py-2" />
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white" @click="saveSupabaseConfig">Guardar conexión</button>
-            <button class="px-4 py-2 rounded-xl border border-slate-200" @click="testSupabaseConnection">Probar conexión</button>
-          </div>
-          <p class="text-xs text-slate-500">También puedes pasar las credenciales por la URL así: ?supabaseUrl=https://tu-proyecto.supabase.co&amp;supabaseKey=TU_ANON_KEY</p>
-        </section>
       </div>
     </main>
 
