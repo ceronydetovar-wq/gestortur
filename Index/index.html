@@ -432,7 +432,10 @@ createApp({
       tables.forEach(table => {
         realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, payload => {
           if (payload.eventType === 'INSERT') {
-            DB[table].unshift(payload.new);
+            // Evitar duplicado si ya existe el id
+            if (!DB[table].find(r => r.id === payload.new.id)) {
+              DB[table].unshift(payload.new);
+            }
           } else if (payload.eventType === 'UPDATE') {
             const idx = DB[table].findIndex(r => r.id === payload.new.id);
             if (idx >= 0) DB[table][idx] = payload.new;
@@ -470,12 +473,13 @@ createApp({
         }
         if (res.error) throw res.error;
         if (!isNew) {
+          // UPDATE: actualizar localmente (Realtime también lo hará pero es idempotente por id)
           const idx = DB[table].findIndex(r => r.id === form.id);
           if (idx >= 0) DB[table][idx] = res.data;
-        } else {
-          DB[table].unshift(res.data);
+          saveLocal();
         }
-        saveLocal();
+        // INSERT: NO agregar manualmente — Realtime lo agregará vía evento postgres_changes
+        // Así se evita que aparezca duplicado
         resetForm(form, defaults);
       } catch (e) {
         if (isNew) {
