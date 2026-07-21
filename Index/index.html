@@ -154,7 +154,7 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 class="font-semibold">Conexión a Supabase</h3>
-              <p class="text-sm text-slate-600">Usa tu proyecto real. Abre Project Settings → API y pega la URL y la anon key.</p>
+              <p class="text-sm text-slate-600">Copia la URL y la anon key desde Project Settings → API en tu proyecto de Supabase. Después crea una cuenta en la app para que los cambios se guarden en la nube.</p>
             </div>
             <span class="px-3 py-1 rounded-full text-sm" :class="supabaseConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">{{ supabaseConnected ? 'Conectado' : 'Pendiente' }}</span>
           </div>
@@ -166,6 +166,7 @@
             <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white" @click="saveSupabaseConfig">Guardar conexión</button>
             <button class="px-4 py-2 rounded-xl border border-slate-200" @click="testSupabaseConnection">Probar conexión</button>
           </div>
+          <p class="text-xs text-slate-500">También puedes pasar las credenciales por la URL así: ?supabaseUrl=https://tu-proyecto.supabase.co&amp;supabaseKey=TU_ANON_KEY</p>
         </section>
       </div>
     </main>
@@ -196,11 +197,17 @@
 
   function loadSupabaseConfig() {
     try {
+      const params = new URLSearchParams(window.location.search);
+      const urlParam = params.get('supabaseUrl');
+      const keyParam = params.get('supabaseKey');
+      if (urlParam) supabaseConfig.url = decodeURIComponent(urlParam);
+      if (keyParam) supabaseConfig.anonKey = decodeURIComponent(keyParam);
+
       const raw = localStorage.getItem(SUPABASE_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.url) supabaseConfig.url = parsed.url;
-        if (parsed.anonKey) supabaseConfig.anonKey = parsed.anonKey;
+        if (!urlParam && parsed.url) supabaseConfig.url = parsed.url;
+        if (!keyParam && parsed.anonKey) supabaseConfig.anonKey = parsed.anonKey;
       }
     } catch (err) {
       console.warn('No se pudo cargar la configuración de Supabase', err);
@@ -308,7 +315,7 @@
       function prevMonth(){ const next=new Date(monthCursor.value); next.setMonth(next.getMonth()-1); monthCursor.value=next; }
       function nextMonth(){ const next=new Date(monthCursor.value); next.setMonth(next.getMonth()+1); monthCursor.value=next; }
       function selectDay(date){ selectedDay.value=date; tab.value='calendar'; }
-      async function submitAuth(){ authLoading.value=true; authError.value=null; try{ if(authMode.value==='signin'){ const { data, error:authErr }=await supa.auth.signInWithPassword({ email:authForm.email, password:authForm.password }); if(authErr) throw authErr; user.value=data.user; } else{ const { data, error:authErr }=await supa.auth.signUp({ email:authForm.email, password:authForm.password, options:{ data:{ name:authForm.name } } }); if(authErr) throw authErr; user.value=data.user; if(!data.session) authError.value='Revisa tu correo para confirmar la cuenta.'; } await fetchAll(); } catch(err){ authError.value=err.message; } finally{ authLoading.value=false; } }
+      async function submitAuth(){ authLoading.value=true; authError.value=null; if (!isConfiguredSupabase()) { authError.value='Primero pega la URL y la anon key de tu proyecto Supabase.'; authLoading.value=false; return; } try{ if(authMode.value==='signin'){ const { data, error:authErr }=await supa.auth.signInWithPassword({ email:authForm.email, password:authForm.password }); if(authErr) throw authErr; user.value=data.user; } else{ const { data, error:authErr }=await supa.auth.signUp({ email:authForm.email, password:authForm.password, options:{ data:{ name:authForm.name } } }); if(authErr) throw authErr; user.value=data.user; if(!data.session) authError.value='Revisa tu correo para confirmar la cuenta.'; } await fetchAll(); } catch(err){ authError.value=err.message; } finally{ authLoading.value=false; } }
       function enterDemo(){ user.value={ email:'demo@equipo.local', user_metadata:{ name:'Equipo demo' } }; fetchAll(); }
       async function signOut(){ await supa.auth.signOut(); user.value=null; authForm.email=''; authForm.password=''; authForm.name=''; loadFromLocalStorage(); }
       function exportar(){ const dataStr=JSON.stringify({ projects:DB.projects, tasks:DB.tasks, activities:DB.activities, requests:DB.requests, communications:DB.communications, events:DB.events, exportDate:new Date().toISOString() }, null, 2); const blob=new Blob([dataStr],{ type:'application/json' }); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`proyectos-backup-${today}.json`; a.click(); URL.revokeObjectURL(a.href); }

@@ -98,32 +98,44 @@ alter table public.communications enable row level security;
 alter table public.activities enable row level security;
 alter table public.events enable row level security;
 
-create policy if not exists "Permitir lectura para usuarios autenticados" on public.projects
+drop policy if exists "Permitir lectura para usuarios autenticados" on public.projects;
+drop policy if exists "Permitir escritura para usuarios autenticados" on public.projects;
+create policy "Permitir lectura para usuarios autenticados" on public.projects
   for select using (auth.role() = 'authenticated');
-create policy if not exists "Permitir escritura para usuarios autenticados" on public.projects
+create policy "Permitir escritura para usuarios autenticados" on public.projects
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-create policy if not exists "Permitir lectura para usuarios autenticados" on public.tasks
+drop policy if exists "Permitir lectura para usuarios autenticados" on public.tasks;
+drop policy if exists "Permitir escritura para usuarios autenticados" on public.tasks;
+create policy "Permitir lectura para usuarios autenticados" on public.tasks
   for select using (auth.role() = 'authenticated');
-create policy if not exists "Permitir escritura para usuarios autenticados" on public.tasks
+create policy "Permitir escritura para usuarios autenticados" on public.tasks
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-create policy if not exists "Permitir lectura para usuarios autenticados" on public.requests
+drop policy if exists "Permitir lectura para usuarios autenticados" on public.requests;
+drop policy if exists "Permitir escritura para usuarios autenticados" on public.requests;
+create policy "Permitir lectura para usuarios autenticados" on public.requests
   for select using (auth.role() = 'authenticated');
-create policy if not exists "Permitir escritura para usuarios autenticados" on public.requests
+create policy "Permitir escritura para usuarios autenticados" on public.requests
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-create policy if not exists "Permitir lectura para usuarios autenticados" on public.communications
+drop policy if exists "Permitir lectura para usuarios autenticados" on public.communications;
+drop policy if exists "Permitir escritura para usuarios autenticados" on public.communications;
+create policy "Permitir lectura para usuarios autenticados" on public.communications
   for select using (auth.role() = 'authenticated');
-create policy if not exists "Permitir escritura para usuarios autenticados" on public.communications
+create policy "Permitir escritura para usuarios autenticados" on public.communications
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-create policy if not exists "Permitir lectura para usuarios autenticados" on public.activities
+drop policy if exists "Permitir lectura para usuarios autenticados" on public.activities;
+drop policy if exists "Permitir escritura para usuarios autenticados" on public.activities;
+create policy "Permitir lectura para usuarios autenticados" on public.activities
   for select using (auth.role() = 'authenticated');
-create policy if not exists "Permitir escritura para usuarios autenticados" on public.activities
+create policy "Permitir escritura para usuarios autenticados" on public.activities
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
-create policy if not exists "Permitir lectura para usuarios autenticados" on public.events
+drop policy if exists "Permitir lectura para usuarios autenticados" on public.events;
+drop policy if exists "Permitir escritura para usuarios autenticados" on public.events;
+create policy "Permitir lectura para usuarios autenticados" on public.events
   for select using (auth.role() = 'authenticated');
-create policy if not exists "Permitir escritura para usuarios autenticados" on public.events
+create policy "Permitir escritura para usuarios autenticados" on public.events
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
