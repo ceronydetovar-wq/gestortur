@@ -426,13 +426,18 @@ createApp({
     }
 
     function setupRealtime() {
-      if (!supa || realtimeChannel) return;
+      if (!supa) return;
+      // Destruir canal anterior si existe para evitar suscripciones dobles
+      if (realtimeChannel) {
+        supa.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
       const tables = ['projects','tasks','activities','requests','communications','events'];
-      realtimeChannel = supa.channel('db-changes');
+      realtimeChannel = supa.channel('db-changes-' + Date.now());
       tables.forEach(table => {
         realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, payload => {
           if (payload.eventType === 'INSERT') {
-            // Evitar duplicado si ya existe el id
+            // Solo agregar si el id no existe ya en el array
             if (!DB[table].find(r => r.id === payload.new.id)) {
               DB[table].unshift(payload.new);
             }
@@ -473,13 +478,18 @@ createApp({
         }
         if (res.error) throw res.error;
         if (!isNew) {
-          // UPDATE: actualizar localmente (Realtime también lo hará pero es idempotente por id)
+          // UPDATE: actualizar localmente de forma inmediata
           const idx = DB[table].findIndex(r => r.id === form.id);
           if (idx >= 0) DB[table][idx] = res.data;
           saveLocal();
+        } else {
+          // INSERT: agregar inmediatamente con el dato que regresó Supabase
+          // El evento Realtime llegará después pero la verificación de id duplicado lo ignora
+          if (!DB[table].find(r => r.id === res.data.id)) {
+            DB[table].unshift(res.data);
+          }
+          saveLocal();
         }
-        // INSERT: NO agregar manualmente — Realtime lo agregará vía evento postgres_changes
-        // Así se evita que aparezca duplicado
         resetForm(form, defaults);
       } catch (e) {
         if (isNew) {
