@@ -70,22 +70,35 @@
 
     <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
       <section class="bg-white border rounded-3xl p-5 shadow-sm space-y-4 mb-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+        <div v-if="!supabasePanelCollapsed">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="font-semibold">Conexión a Supabase</h3>
+              <p class="text-sm text-slate-600">Copia la URL y la anon key desde Project Settings → API en tu proyecto de Supabase. Después crea una cuenta en la app para que los cambios se guarden en la nube.</p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-sm" :class="supabaseConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">{{ supabaseConnected ? 'Conectado' : 'Pendiente' }}</span>
+          </div>
+          <div class="grid md:grid-cols-2 gap-3">
+            <input v-model="supabaseConfig.url" placeholder="https://tu-proyecto.supabase.co" class="w-full border rounded-xl px-3 py-2" />
+            <input v-model="supabaseConfig.anonKey" placeholder="anon key" class="w-full border rounded-xl px-3 py-2" />
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white" @click="saveSupabaseConfig">Guardar conexión</button>
+            <button class="px-4 py-2 rounded-xl border border-slate-200" @click="testSupabaseConnection">Probar conexión</button>
+            <button class="px-4 py-2 rounded-xl border border-slate-200" @click="supabasePanelCollapsed = true">Ocultar</button>
+          </div>
+          <p class="text-xs text-slate-500">También puedes pasar las credenciales por la URL así: ?supabaseUrl=https://tu-proyecto.supabase.co&amp;supabaseKey=TU_ANON_KEY</p>
+        </div>
+        <div v-else class="flex items-center justify-between">
           <div>
             <h3 class="font-semibold">Conexión a Supabase</h3>
-            <p class="text-sm text-slate-600">Copia la URL y la anon key desde Project Settings → API en tu proyecto de Supabase. Después crea una cuenta en la app para que los cambios se guarden en la nube.</p>
+            <p class="text-sm text-slate-600 truncate max-w-lg">{{ supabaseConfig.url || 'Sin configurar' }}</p>
           </div>
-          <span class="px-3 py-1 rounded-full text-sm" :class="supabaseConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">{{ supabaseConnected ? 'Conectado' : 'Pendiente' }}</span>
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full text-sm" :class="supabaseConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">{{ supabaseConnected ? 'Conectado' : 'Pendiente' }}</span>
+            <button class="px-3 py-2 rounded-xl border" @click="supabasePanelCollapsed = false">Editar</button>
+          </div>
         </div>
-        <div class="grid md:grid-cols-2 gap-3">
-          <input v-model="supabaseConfig.url" placeholder="https://tu-proyecto.supabase.co" class="w-full border rounded-xl px-3 py-2" />
-          <input v-model="supabaseConfig.anonKey" placeholder="anon key" class="w-full border rounded-xl px-3 py-2" />
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white" @click="saveSupabaseConfig">Guardar conexión</button>
-          <button class="px-4 py-2 rounded-xl border border-slate-200" @click="testSupabaseConnection">Probar conexión</button>
-        </div>
-        <p class="text-xs text-slate-500">También puedes pasar las credenciales por la URL así: ?supabaseUrl=https://tu-proyecto.supabase.co&amp;supabaseKey=TU_ANON_KEY</p>
       </section>
 
       <div v-if="!user" class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center py-10">
@@ -182,6 +195,7 @@
   const SUPABASE_STORAGE_KEY = 'gestor-supabase-config';
   const supabaseConfig = reactive({ url: DEFAULT_SUPABASE_URL, anonKey: DEFAULT_SUPABASE_ANON_KEY });
   const supabaseConnected = ref(false);
+  const supabasePanelCollapsed = ref(false);
   let supa = null;
   let appContext = null;
 
@@ -229,6 +243,11 @@
       return;
     }
     appContext?.fetchAll?.();
+    // Si la configuración es válida, colapsamos el panel para reducir ruido visual
+    if (isConfiguredSupabase()) {
+      supabaseConnected.value = true;
+      appContext?.setSupabasePanelCollapsed?.(true);
+    }
   }
 
   async function testSupabaseConnection() {
@@ -321,8 +340,8 @@
       async function signOut(){ await supa.auth.signOut(); user.value=null; authForm.email=''; authForm.password=''; authForm.name=''; loadFromLocalStorage(); }
       function exportar(){ const dataStr=JSON.stringify({ projects:DB.projects, tasks:DB.tasks, activities:DB.activities, requests:DB.requests, communications:DB.communications, events:DB.events, exportDate:new Date().toISOString() }, null, 2); const blob=new Blob([dataStr],{ type:'application/json' }); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`proyectos-backup-${today}.json`; a.click(); URL.revokeObjectURL(a.href); }
       async function importar(evt){ const file=evt.target.files?.[0]; if(!file) return; try{ const json=JSON.parse(await file.text()); if(json.projects) setDbFromSnapshot(json); error.value='Importación lista para revisión.'; saveToLocalStorage(); } catch(e){ error.value=`Error al leer el archivo JSON: ${e.message}`; } evt.target.value=''; }
-      onMounted(async()=>{ loadFromLocalStorage(); loadSupabaseConfig(); appContext = { setError: (value) => { error.value = value; }, setLoading: (value) => { loading.value = value; }, fetchAll }; await fetchAll(); });
-      return { loading, error, tab, tabs, onTabChange, DB, sections, formatDate, projectName, statusClass, priorityClass, kpi, proximosVencimientos, ultimasActividades, save, del, edit, resetForm, exportar, importar, authMode, authForm, authLoading, authError, user, submitAuth, enterDemo, signOut, getUserName, monthCursor, calendarLabel, calendarDays, selectedDay, calendarItems, prevMonth, nextMonth, selectDay, dayItems, todayDate, supabaseConfig, supabaseConnected, saveSupabaseConfig, testSupabaseConnection };
+      onMounted(async()=>{ loadFromLocalStorage(); loadSupabaseConfig(); appContext = { setError: (value) => { error.value = value; }, setLoading: (value) => { loading.value = value; }, fetchAll, setSupabasePanelCollapsed: (v) => { supabasePanelCollapsed.value = v; } }; await fetchAll(); });
+      return { loading, error, tab, tabs, onTabChange, DB, sections, formatDate, projectName, statusClass, priorityClass, kpi, proximosVencimientos, ultimasActividades, save, del, edit, resetForm, exportar, importar, authMode, authForm, authLoading, authError, user, submitAuth, enterDemo, signOut, getUserName, monthCursor, calendarLabel, calendarDays, selectedDay, calendarItems, prevMonth, nextMonth, selectDay, dayItems, todayDate, supabaseConfig, supabaseConnected, supabasePanelCollapsed, saveSupabaseConfig, testSupabaseConnection };
     }
   }).mount('#app');
   </script>
