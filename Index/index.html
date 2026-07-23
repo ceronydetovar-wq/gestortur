@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Gestor de Proyectos | Equipo, Turnos y Calendario</title>
+  <title>Gestor de Proyectos | Secretaría de Turismo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
@@ -11,40 +11,49 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
   <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.umd.js"></script>
   <style>
-    :root { color-scheme: light; }
+    :root {
+      color-scheme: light;
+      --guinda:      #6B1535;
+      --guinda-dark: #4e0f26;
+      --guinda-pale: #f5e6eb;
+    }
     body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
     .badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; }
-    .badge-gray  { background:#e5e7eb; color:#1f2937; }
-    .badge-blue  { background:#dbeafe; color:#1e40af; }
-    .badge-green { background:#dcfce7; color:#166534; }
-    .badge-yellow{ background:#fef9c3; color:#854d0e; }
-    .badge-red   { background:#fee2e2; color:#991b1b; }
+    .badge-gray   { background:#e5e7eb; color:#1f2937; }
+    .badge-blue   { background:#f5e6eb; color:#6B1535; }
+    .badge-green  { background:#dcfce7; color:#166534; }
+    .badge-yellow { background:#fef9c3; color:#854d0e; }
+    .badge-red    { background:#fee2e2; color:#991b1b; }
     .table th, .table td { vertical-align: middle; }
-    .link { color:#4f46e5; cursor:pointer; }
+    .link { color:#6B1535; cursor:pointer; }
     .link:hover { text-decoration:underline; }
     .progress-cell { width:120px; }
     .progress-wrap { background:#e5e7eb; border-radius:9999px; overflow:hidden; height:8px; }
-    .progress-bar  { background:#6366f1; height:8px; transition:width 0.3s; }
+    .progress-bar  { background:#6B1535; height:8px; transition:width 0.3s; }
     .progress-text { font-size:11px; color:#374151; margin-left:8px; }
     .glass { backdrop-filter:blur(14px); }
     .calendar-day { min-height:92px; }
-    .calendar-day--today    { background: linear-gradient(135deg,#eef2ff,#f5f3ff); }
-    .calendar-day--selected { outline:2px solid #4f46e5; }
+    .calendar-day--today    { background: linear-gradient(135deg,#f5e6eb,#fdf4f7); }
+    .calendar-day--selected { outline:2px solid #6B1535; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
 <div id="app" class="min-h-screen flex flex-col">
 
   <!-- Header -->
-  <header class="bg-white/90 border-b sticky top-0 z-20 glass">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow">
-          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        </div>
-        <div>
-          <h1 class="text-xl font-semibold">Gestor de Proyectos</h1>
-          <p class="text-sm text-slate-500">Operación y seguimiento para tu equipo</p>
+  <header class="bg-white border-b sticky top-0 z-20 glass" style="border-top:4px solid #6B1535">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-4">
+        <!-- Logo Secretaría de Turismo -->
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Logo_Secretar%C3%ADa_de_Turismo_de_M%C3%A9xico.svg/320px-Logo_Secretar%C3%ADa_de_Turismo_de_M%C3%A9xico.svg.png"
+          alt="Secretaría de Turismo"
+          class="h-12 w-auto object-contain"
+          onerror="this.outerHTML='<div class=\'h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg\' style=\'background:#6B1535\'>T</div>'"
+        />
+        <div class="border-l-2 pl-4" style="border-color:#6B1535">
+          <h1 class="text-lg font-semibold" style="color:#6B1535">Gestor de Proyectos</h1>
+          <p class="text-xs text-slate-500">Operación y seguimiento del equipo</p>
         </div>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
@@ -52,14 +61,18 @@
         <label class="px-3 py-2 border rounded-lg text-sm cursor-pointer hover:bg-slate-100">Importar<input type="file" class="hidden" accept="application/json" @change="importar"></label>
         <span v-if="loading" class="px-3 py-2 rounded-full bg-amber-100 text-amber-800 text-sm">Sincronizando…</span>
         <span v-else class="px-3 py-2 rounded-full bg-emerald-100 text-emerald-800 text-sm">Listo</span>
-        <button v-if="user" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm" @click="signOut">Cerrar sesión</button>
+        <button v-if="user" class="px-3 py-2 rounded-lg text-white text-sm" style="background:#6B1535" @click="signOut">Cerrar sesión</button>
       </div>
     </div>
-    <nav class="bg-white/80 border-t">
+    <nav class="bg-white border-t" style="border-color:#e8d0d8">
       <div class="max-w-7xl mx-auto px-4">
         <ul class="flex gap-2 overflow-x-auto py-2">
           <li v-for="t in tabs" :key="t.id">
-            <button class="px-4 py-2 rounded-full text-sm whitespace-nowrap" :class="tab===t.id ? 'bg-indigo-600 text-white shadow' : 'hover:bg-slate-100'" @click="onTabChange(t.id)">{{ t.label }}</button>
+            <button
+              class="px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors"
+              :style="tab===t.id ? 'background:#6B1535;color:#fff' : 'color:#4b5563'"
+              :class="tab!==t.id ? 'hover:bg-rose-50' : ''"
+              @click="onTabChange(t.id)">{{ t.label }}</button>
           </li>
         </ul>
       </div>
@@ -88,7 +101,7 @@
           <input v-model="supabaseKey" placeholder="anon key" class="w-full border rounded-xl px-3 py-2" />
         </div>
         <div class="flex flex-wrap gap-2">
-          <button class="px-4 py-2 rounded-xl bg-indigo-600 text-white" @click="guardarSupabase">Guardar conexión</button>
+          <button class="px-4 py-2 rounded-xl text-white" style="background:#6B1535" @click="guardarSupabase">Guardar conexión</button>
           <button class="px-4 py-2 rounded-xl border border-slate-200" @click="probarSupabase">Probar conexión</button>
           <button class="px-4 py-2 rounded-xl border border-slate-200" @click="supabasePanelCollapsed=true">Ocultar</button>
         </div>
@@ -108,25 +121,25 @@
     <!-- Login -->
     <div v-if="!user" class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center py-10">
       <div class="space-y-6">
-        <div class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">Panel operativo para equipos</div>
+        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" style="background:#f5e6eb;color:#6B1535">Panel operativo para equipos</div>
         <h2 class="text-4xl font-semibold leading-tight">Centraliza proyectos, turnos, documentos y eventos en un solo lugar.</h2>
         <p class="text-lg text-slate-600">Tu equipo podrá registrar avances, atender solicitudes y ver el estado general del trabajo con orden.</p>
         <div class="grid sm:grid-cols-3 gap-3">
-          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold">{{ kpi.proyectosActivos }}</div><div class="text-sm text-slate-500">Proyectos activos</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold" style="color:#6B1535">{{ kpi.proyectosActivos }}</div><div class="text-sm text-slate-500">Proyectos activos</div></div>
           <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold text-amber-600">{{ kpi.turnosPendientes }}</div><div class="text-sm text-slate-500">Turnos pendientes</div></div>
-          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold">{{ kpi.eventosHoy }}</div><div class="text-sm text-slate-500">Eventos hoy</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold" style="color:#6B1535">{{ kpi.eventosHoy }}</div><div class="text-sm text-slate-500">Eventos hoy</div></div>
         </div>
       </div>
       <div class="bg-white border rounded-3xl shadow-sm p-6 space-y-4">
         <div class="flex gap-2">
-          <button class="flex-1 rounded-full px-3 py-2 text-sm" :class="authMode==='signin' ? 'bg-indigo-600 text-white' : 'bg-slate-100'" @click="authMode='signin'">Iniciar sesión</button>
-          <button class="flex-1 rounded-full px-3 py-2 text-sm" :class="authMode==='signup' ? 'bg-indigo-600 text-white' : 'bg-slate-100'" @click="authMode='signup'">Crear cuenta</button>
+          <button class="flex-1 rounded-full px-3 py-2 text-sm transition-colors" :style="authMode==='signin' ? 'background:#6B1535;color:#fff' : ''" :class="authMode!=='signin' ? 'bg-slate-100' : ''" @click="authMode='signin'">Iniciar sesión</button>
+          <button class="flex-1 rounded-full px-3 py-2 text-sm transition-colors" :style="authMode==='signup' ? 'background:#6B1535;color:#fff' : ''" :class="authMode!=='signup' ? 'bg-slate-100' : ''" @click="authMode='signup'">Crear cuenta</button>
         </div>
         <form @submit.prevent="submitAuth" class="space-y-3">
           <input v-if="authMode==='signup'" v-model="authForm.name" type="text" placeholder="Tu nombre" class="w-full border rounded-xl px-3 py-2" required>
           <input v-model="authForm.email" type="email" placeholder="Correo del equipo" class="w-full border rounded-xl px-3 py-2" required>
           <input v-model="authForm.password" type="password" placeholder="Contraseña" class="w-full border rounded-xl px-3 py-2" required>
-          <button class="w-full rounded-xl bg-indigo-600 text-white py-2" :disabled="authLoading">{{ authMode==='signin' ? 'Entrar' : 'Crear cuenta' }}</button>
+          <button class="w-full rounded-xl text-white py-2" style="background:#6B1535" :disabled="authLoading">{{ authMode==='signin' ? 'Entrar' : 'Crear cuenta' }}</button>
           <p v-if="authError" class="text-sm text-rose-600">{{ authError }}</p>
         </form>
         <button class="w-full rounded-xl border border-slate-200 py-2 text-sm" @click="enterDemo">Continuar en modo demo</button>
@@ -135,15 +148,15 @@
 
     <!-- App principal -->
     <div v-else class="space-y-6">
-      <section class="bg-gradient-to-br from-indigo-600 via-violet-600 to-slate-900 text-white rounded-3xl p-6 shadow-lg">
+      <section class="text-white rounded-3xl p-6 shadow-lg" style="background:linear-gradient(135deg,#6B1535 0%,#8c1a43 50%,#3d0c1e 100%)">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p class="text-sm uppercase tracking-[0.2em] text-indigo-100">Panel de operación</p>
+            <p class="text-sm uppercase tracking-[0.2em]" style="color:#f5c6d5">Panel de operación</p>
             <h2 class="text-2xl font-semibold">Hola, {{ getUserName() }}</h2>
-            <p class="text-indigo-100 mt-1">Tu equipo puede registrar tareas, turnos, eventos y documentos desde aquí.</p>
+            <p class="mt-1" style="color:#f5c6d5">Tu equipo puede registrar tareas, turnos, eventos y documentos desde aquí.</p>
           </div>
-          <div class="rounded-2xl bg-white/15 px-4 py-3">
-            <div class="text-sm text-indigo-100">Hoy</div>
+          <div class="rounded-2xl px-4 py-3" style="background:rgba(255,255,255,0.15)">
+            <div class="text-sm" style="color:#f5c6d5">Hoy</div>
             <div class="text-xl font-semibold">{{ formatDate(todayStr()) }}</div>
           </div>
         </div>
@@ -152,10 +165,10 @@
       <!-- Resumen -->
       <section v-show="tab==='resumen'" class="space-y-6">
         <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Proyectos activos</div><div class="text-3xl font-semibold">{{ kpi.proyectosActivos }}</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Proyectos activos</div><div class="text-3xl font-semibold" style="color:#6B1535">{{ kpi.proyectosActivos }}</div></div>
           <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Tareas abiertas</div><div class="text-3xl font-semibold">{{ kpi.tareasAbiertas }}</div></div>
           <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Turnos pendientes</div><div class="text-3xl font-semibold text-amber-600">{{ kpi.turnosPendientes }}</div></div>
-          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Eventos hoy</div><div class="text-3xl font-semibold text-violet-600">{{ kpi.eventosHoy }}</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Eventos hoy</div><div class="text-3xl font-semibold" style="color:#6B1535">{{ kpi.eventosHoy }}</div></div>
         </div>
         <div class="grid xl:grid-cols-[1.1fr_0.9fr] gap-6">
           <div class="bg-white border rounded-2xl p-4 shadow-sm space-y-3">
@@ -208,7 +221,7 @@
             </div>
           </template>
           <div class="md:col-span-6 flex items-center gap-2">
-            <button class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Guardar</button>
+            <button class="px-4 py-2 text-white rounded-xl" style="background:#6B1535">Guardar</button>
             <button type="button" @click="resetForm(s.form, s.defaults)" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200">Limpiar</button>
           </div>
         </form>
@@ -263,7 +276,7 @@
             class="border rounded-xl p-2 text-left calendar-day"
             :class="[cell.date===selectedDay ? 'calendar-day--selected' : '', cell.date===todayStr() ? 'calendar-day--today' : '', cell.inMonth ? 'bg-white' : 'bg-slate-50 text-slate-400']">
             <div class="text-sm font-medium">{{ cell.day }}</div>
-            <div v-if="dayItems(cell.date).length" class="text-[11px] mt-2 text-slate-600">{{ dayItems(cell.date).length }} registros</div>
+            <div v-if="dayItems(cell.date).length" class="text-[11px] mt-2" style="color:#6B1535">{{ dayItems(cell.date).length }} registros</div>
           </button>
         </div>
         <div class="border-t pt-4">
@@ -295,7 +308,7 @@
     </div>
   </main>
 
-  <footer class="text-center text-xs text-slate-500 py-6">Gestor de Proyectos v8 · preparado para Supabase y trabajo en equipo.</footer>
+  <footer class="text-center text-xs py-6" style="color:#6B1535">Secretaría de Turismo · Gestor de Proyectos · Operación y seguimiento de equipos</footer>
 </div>
 
 <script>
@@ -327,6 +340,7 @@ createApp({
     const supabasePanelCollapsed = ref(false);
     let supa = null;
     let realtimeChannel = null;
+    let realtimeReady = false;
 
     function initSupa() {
       if (supabaseUrl.value && supabaseKey.value) {
@@ -427,36 +441,40 @@ createApp({
 
     function setupRealtime() {
       if (!supa) return;
-      // Destruir canal anterior si existe para evitar suscripciones dobles
+      // Destruir canal previo siempre
       if (realtimeChannel) {
         supa.removeChannel(realtimeChannel);
         realtimeChannel = null;
       }
+      realtimeReady = false;
       const tables = ['projects','tasks','activities','requests','communications','events'];
       realtimeChannel = supa.channel('db-changes-' + Date.now());
       tables.forEach(table => {
         realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, payload => {
           if (payload.eventType === 'INSERT') {
-            // Solo agregar si el id no existe ya en el array
-            if (!DB[table].find(r => r.id === payload.new.id)) {
+            // Solo agregar si el id NO existe ya (evita duplicado con INSERT local)
+            if (!DB[table].find(r => String(r.id) === String(payload.new.id))) {
               DB[table].unshift(payload.new);
             }
           } else if (payload.eventType === 'UPDATE') {
-            const idx = DB[table].findIndex(r => r.id === payload.new.id);
+            const idx = DB[table].findIndex(r => String(r.id) === String(payload.new.id));
             if (idx >= 0) DB[table][idx] = payload.new;
+            else DB[table].unshift(payload.new);
           } else if (payload.eventType === 'DELETE') {
-            DB[table] = DB[table].filter(r => r.id !== payload.old.id);
+            DB[table] = DB[table].filter(r => String(r.id) !== String(payload.old.id));
           }
           saveLocal();
         });
       });
-      realtimeChannel.subscribe();
+      realtimeChannel.subscribe(status => {
+        realtimeReady = (status === 'SUBSCRIBED');
+      });
     }
 
     function cleanPayload(form, isNew) {
       const p = {};
       Object.entries(form).forEach(([k, v]) => {
-        if (isNew && k === 'id') return; // no enviar id en INSERT
+        if (isNew && k === 'id') return;
         p[k] = (v === '' || v === null || v === undefined) ? null : v;
       });
       p.updated_at = new Date().toISOString();
@@ -478,14 +496,14 @@ createApp({
         }
         if (res.error) throw res.error;
         if (!isNew) {
-          // UPDATE: actualizar localmente de forma inmediata
-          const idx = DB[table].findIndex(r => r.id === form.id);
+          const idx = DB[table].findIndex(r => String(r.id) === String(form.id));
           if (idx >= 0) DB[table][idx] = res.data;
+          else DB[table].unshift(res.data);
           saveLocal();
         } else {
-          // INSERT: agregar inmediatamente con el dato que regresó Supabase
-          // El evento Realtime llegará después pero la verificación de id duplicado lo ignora
-          if (!DB[table].find(r => r.id === res.data.id)) {
+          // INSERT: agregar al array local inmediatamente con id real de Supabase
+          // Realtime llegará después y lo ignorará porque el id ya existe
+          if (!DB[table].find(r => String(r.id) === String(res.data.id))) {
             DB[table].unshift(res.data);
           }
           saveLocal();
@@ -575,16 +593,16 @@ createApp({
     // ── Tabs y secciones ─────────────────────────────────────────────
     const tab  = ref('resumen');
     const tabs = [
-      { id: 'resumen',         label: 'Resumen'       },
-      { id: 'projects',        label: 'Proyectos'     },
-      { id: 'tasks',           label: 'Tareas'        },
-      { id: 'requests',        label: 'Turnos'        },
-      { id: 'events',          label: 'Eventos'       },
-      { id: 'communications',  label: 'Documentos'    },
-      { id: 'activities',      label: 'Actividades'   },
-      { id: 'calendar',        label: 'Calendario'    },
-      { id: 'gantt',           label: 'Gantt'         },
-      { id: 'graficos',        label: 'Gráficos'      }
+      { id: 'resumen',        label: 'Resumen'      },
+      { id: 'projects',       label: 'Proyectos'    },
+      { id: 'tasks',          label: 'Tareas'       },
+      { id: 'requests',       label: 'Turnos'       },
+      { id: 'events',         label: 'Eventos'      },
+      { id: 'communications', label: 'Documentos'   },
+      { id: 'activities',     label: 'Actividades'  },
+      { id: 'calendar',       label: 'Calendario'   },
+      { id: 'gantt',          label: 'Gantt'        },
+      { id: 'graficos',       label: 'Gráficos'     }
     ];
 
     const td = todayStr();
@@ -624,10 +642,10 @@ createApp({
           { key:'start_date',  label:'Inicio',        type:'date' },
           { key:'due_date',    label:'Vence',         type:'date' },
           { key:'responsible', label:'Responsable',   type:'text' },
-          { key:'priority',    label:'Prioridad',     type:'select',  default:'Media',      options:[{value:'Baja',label:'Baja'},{value:'Media',label:'Media'},{value:'Alta',label:'Alta'},{value:'Crítica',label:'Crítica'}] },
-          { key:'status',      label:'Estado',        type:'select',  default:'Planificado',options:[{value:'Planificado',label:'Planificado'},{value:'En Curso',label:'En Curso'},{value:'Pausado',label:'Pausado'},{value:'Completado',label:'Completado'}] },
-          { key:'notes',       label:'Notas',         type:'textarea',span:'md:col-span-4' },
-          { key:'progress',    label:'Progreso',      type:'range',   span:'md:col-span-2' }
+          { key:'priority',    label:'Prioridad',     type:'select',  default:'Media',       options:[{value:'Baja',label:'Baja'},{value:'Media',label:'Media'},{value:'Alta',label:'Alta'},{value:'Crítica',label:'Crítica'}] },
+          { key:'status',      label:'Estado',        type:'select',  default:'Planificado', options:[{value:'Planificado',label:'Planificado'},{value:'En Curso',label:'En Curso'},{value:'Pausado',label:'Pausado'},{value:'Completado',label:'Completado'}] },
+          { key:'notes',       label:'Notas',         type:'textarea', span:'md:col-span-4' },
+          { key:'progress',    label:'Progreso',      type:'range',    span:'md:col-span-2' }
         ],
         headers:[
           { key:'title',      label:'Título' },
@@ -661,8 +679,8 @@ createApp({
           { key:'date',       label:'Fecha',       type:'date' },
           { key:'time',       label:'Hora',        type:'time' },
           { key:'status',     label:'Estado',      type:'select', default:'Pendiente', options:[{value:'Pendiente',label:'Pendiente'},{value:'Atendido',label:'Atendido'}] },
-          { key:'priority',   label:'Prioridad',   type:'select', default:'Media',     span:'md:col-span-2', options:[{value:'Baja',label:'Baja'},{value:'Media',label:'Media'},{value:'Alta',label:'Alta'},{value:'Urgente',label:'Urgente'}] },
-          { key:'type',       label:'Tipo',        type:'select', default:'Atender',   span:'md:col-span-2', options:[{value:'Atender',label:'Atender'},{value:'Conocimiento',label:'Conocimiento'}] },
+          { key:'priority',   label:'Prioridad',   type:'select', default:'Media', span:'md:col-span-2', options:[{value:'Baja',label:'Baja'},{value:'Media',label:'Media'},{value:'Alta',label:'Alta'},{value:'Urgente',label:'Urgente'}] },
+          { key:'type',       label:'Tipo',        type:'select', default:'Atender', span:'md:col-span-2', options:[{value:'Atender',label:'Atender'},{value:'Conocimiento',label:'Conocimiento'}] },
           { key:'notes',      label:'Detalle',     type:'textarea', span:'md:col-span-6' }
         ],
         headers:[
@@ -686,12 +704,12 @@ createApp({
           { key:'notes',       label:'Notas adicionales',    type:'textarea', span:'md:col-span-6' }
         ],
         headers:[
-          { key:'identifier',  label:'ID' },
-          { key:'date',        label:'Fecha',       format:'date' },
-          { key:'type',        label:'Tipo' },
-          { key:'subject',     label:'Asunto' },
-          { key:'recipient',   label:'Destinatario' },
-          { key:'project_id',  label:'Proyecto',    format:'project' }
+          { key:'identifier', label:'ID' },
+          { key:'date',       label:'Fecha',       format:'date' },
+          { key:'type',       label:'Tipo' },
+          { key:'subject',    label:'Asunto' },
+          { key:'recipient',  label:'Destinatario' },
+          { key:'project_id', label:'Proyecto',    format:'project' }
         ]
       },
       events: {
@@ -717,9 +735,9 @@ createApp({
     const sectionsArray = computed(() => Object.values(sections));
 
     // ── KPIs ─────────────────────────────────────────────────────────
-    const projectName  = id => DB.projects.find(p => p.id === id)?.name || '—';
-    const statusClass  = s => ({ 'Planificado':'badge-gray','En Curso':'badge-blue','Pausado':'badge-yellow','Completado':'badge-green','En curso':'badge-blue','Pendiente':'badge-yellow','Atendido':'badge-green' }[s] || 'badge-gray');
-    const priorityClass= p => ({ 'Baja':'badge-gray','Media':'badge-blue','Alta':'badge-yellow','Crítica':'badge-red','Urgente':'badge-red' }[p] || 'badge-gray');
+    const projectName   = id => DB.projects.find(p => p.id === id)?.name || '—';
+    const statusClass   = s => ({ 'Planificado':'badge-gray','En Curso':'badge-blue','Pausado':'badge-yellow','Completado':'badge-green','En curso':'badge-blue','Pendiente':'badge-yellow','Atendido':'badge-green' }[s] || 'badge-gray');
+    const priorityClass = p => ({ 'Baja':'badge-gray','Media':'badge-blue','Alta':'badge-yellow','Crítica':'badge-red','Urgente':'badge-red' }[p] || 'badge-gray');
 
     const kpi = computed(() => ({
       proyectosActivos:  DB.projects.filter(p => p.status === 'En curso' || p.status === 'En Curso').length,
@@ -742,8 +760,8 @@ createApp({
     );
 
     // ── Calendario ───────────────────────────────────────────────────
-    const monthCursor = ref(new Date());
-    const selectedDay = ref(todayStr());
+    const monthCursor   = ref(new Date());
+    const selectedDay   = ref(todayStr());
     const calendarLabel = computed(() => monthCursor.value.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }));
 
     const calendarDays = computed(() => {
@@ -780,8 +798,8 @@ createApp({
     const selectDay = date => { selectedDay.value = date; tab.value = 'calendar'; };
 
     // ── Gantt y Gráficos ─────────────────────────────────────────────
-    let ganttInstance = null;
-    let chartEstado   = null;
+    let ganttInstance  = null;
+    let chartEstado    = null;
     let chartPrioridad = null;
 
     function renderGantt() {
@@ -803,17 +821,16 @@ createApp({
       try {
         const estados    = ['Planificado','En Curso','Pausado','Completado'];
         const estCounts  = estados.map(s => DB.tasks.filter(t => t.status === s).length);
-        const prioColors = ['#e5e7eb','#dbeafe','#fef9c3','#fee2e2'];
         const priors     = ['Baja','Media','Alta','Urgente'];
         const priorCounts= priors.map(p => DB.requests.filter(r => r.priority === p).length);
 
-        if (chartEstado)   { chartEstado.destroy();   chartEstado   = null; }
-        if (chartPrioridad){ chartPrioridad.destroy(); chartPrioridad= null; }
+        if (chartEstado)    { chartEstado.destroy();    chartEstado    = null; }
+        if (chartPrioridad) { chartPrioridad.destroy(); chartPrioridad = null; }
 
         const ctxE = document.getElementById('chart-estado');
         const ctxP = document.getElementById('chart-prioridad-turnos');
-        if (ctxE) chartEstado    = new Chart(ctxE, { type:'doughnut', data:{ labels:estados,    datasets:[{ data:estCounts,  backgroundColor:['#e5e7eb','#dbeafe','#fef9c3','#dcfce7'] }] }, options:{ responsive:true, maintainAspectRatio:false } });
-        if (ctxP) chartPrioridad = new Chart(ctxP, { type:'bar',       data:{ labels:priors,     datasets:[{ data:priorCounts,backgroundColor:prioColors, borderRadius:6 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } } });
+        if (ctxE) chartEstado    = new Chart(ctxE, { type:'doughnut', data:{ labels:estados, datasets:[{ data:estCounts,  backgroundColor:['#e5e7eb','#f5e6eb','#fef9c3','#dcfce7'] }] }, options:{ responsive:true, maintainAspectRatio:false } });
+        if (ctxP) chartPrioridad = new Chart(ctxP, { type:'bar',      data:{ labels:priors,  datasets:[{ data:priorCounts, backgroundColor:['#e5e7eb','#f5e6eb','#fef9c3','#fee2e2'], borderRadius:6 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } } });
       } catch (e) { console.warn(e); }
     }
 
