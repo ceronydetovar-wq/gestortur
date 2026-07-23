@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Gestor de Proyectos | Equipo, Turnos y Calendario</title>
+  <title>Gestor de Proyectos | Secretaría de Turismo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
@@ -11,227 +11,893 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
   <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.umd.js"></script>
   <style>
-    :root { color-scheme: light; }
-    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; user-select:none; }
-    .badge-gray { background:#e5e7eb; color:#1f2937; }
-    .badge-blue { background:#dbeafe; color:#1e40af; }
-    .badge-green { background:#dcfce7; color:#166534; }
+    :root {
+      color-scheme: light;
+      --guinda:      #6B1535;
+      --guinda-dark: #4e0f26;
+      --guinda-pale: #f5e6eb;
+    }
+    body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    .badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; }
+    .badge-gray   { background:#e5e7eb; color:#1f2937; }
+    .badge-blue   { background:#f5e6eb; color:#6B1535; }
+    .badge-green  { background:#dcfce7; color:#166534; }
     .badge-yellow { background:#fef9c3; color:#854d0e; }
-    .badge-red { background:#fee2e2; color:#991b1b; }
+    .badge-red    { background:#fee2e2; color:#991b1b; }
     .table th, .table td { vertical-align: middle; }
-    .link { color:#4f46e5; cursor:pointer; }
+    .link { color:#6B1535; cursor:pointer; }
     .link:hover { text-decoration:underline; }
-    .progress-cell { width: 120px; }
+    .progress-cell { width:120px; }
     .progress-wrap { background:#e5e7eb; border-radius:9999px; overflow:hidden; height:8px; }
-    .progress-bar { background:#6366f1; height:8px; transition: width 0.3s; }
+    .progress-bar  { background:#6B1535; height:8px; transition:width 0.3s; }
     .progress-text { font-size:11px; color:#374151; margin-left:8px; }
-    .glass { backdrop-filter: blur(14px); }
-    .calendar-day { min-height: 92px; }
-    .calendar-day--today { background: linear-gradient(135deg, #eef2ff, #f5f3ff); }
-    .calendar-day--selected { outline: 2px solid #4f46e5; }
+    .glass { backdrop-filter:blur(14px); }
+    .calendar-day { min-height:92px; }
+    .calendar-day--today    { background: linear-gradient(135deg,#f5e6eb,#fdf4f7); }
+    .calendar-day--selected { outline:2px solid #6B1535; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
-  <div id="app" class="min-h-screen flex flex-col">
-    <header class="bg-white/90 border-b sticky top-0 z-20 glass">
-      <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          </div>
-          <div>
-            <h1 class="text-xl font-semibold">Gestor de Proyectos</h1>
-            <p class="text-sm text-slate-500">Operación y seguimiento para tu equipo</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 flex-wrap">
-          <button class="px-3 py-2 border rounded-lg text-sm hover:bg-slate-100" @click="exportar">Exportar</button>
-          <label class="px-3 py-2 border rounded-lg text-sm cursor-pointer hover:bg-slate-100">Importar<input type="file" class="hidden" accept="application/json" @change="importar"></label>
-          <span v-if="loading" class="px-3 py-2 rounded-full bg-amber-100 text-amber-800 text-sm">Sincronizando…</span>
-          <span v-else class="px-3 py-2 rounded-full bg-emerald-100 text-emerald-800 text-sm">Listo</span>
-          <button v-if="user" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm" @click="signOut">Cerrar sesión</button>
+<div id="app" class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b sticky top-0 z-20 glass" style="border-top:4px solid #6B1535">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-4">
+        <!-- Logo Secretaría de Turismo -->
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Logo_Secretar%C3%ADa_de_Turismo_de_M%C3%A9xico.svg/320px-Logo_Secretar%C3%ADa_de_Turismo_de_M%C3%A9xico.svg.png"
+          alt="Secretaría de Turismo"
+          class="h-12 w-auto object-contain"
+          onerror="this.outerHTML='<div class=\'h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg\' style=\'background:#6B1535\'>T</div>'"
+        />
+        <div class="border-l-2 pl-4" style="border-color:#6B1535">
+          <h1 class="text-lg font-semibold" style="color:#6B1535">Gestor de Proyectos</h1>
+          <p class="text-xs text-slate-500">Operación y seguimiento del equipo</p>
         </div>
       </div>
-      <nav class="bg-white/80 border-t">
-        <div class="max-w-7xl mx-auto px-4">
-          <ul class="flex gap-2 overflow-x-auto py-2">
-            <li v-for="t in tabs" :key="t.id">
-              <button class="px-4 py-2 rounded-full text-sm whitespace-nowrap" :class="tab===t.id ? 'bg-indigo-600 text-white shadow' : 'hover:bg-slate-100'" @click="onTabChange(t.id)">{{ t.label }}</button>
-            </li>
-          </ul>
-        </div>
-      </nav>
-    </header>
-
-    <div v-if="error" class="max-w-7xl mx-auto w-full px-4 mt-4">
-      <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-900 text-sm" @click="error=null">{{ error }}</div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button class="px-3 py-2 border rounded-lg text-sm hover:bg-slate-100" @click="exportar">Exportar</button>
+        <label class="px-3 py-2 border rounded-lg text-sm cursor-pointer hover:bg-slate-100">Importar<input type="file" class="hidden" accept="application/json" @change="importar"></label>
+        <span v-if="loading" class="px-3 py-2 rounded-full bg-amber-100 text-amber-800 text-sm">Sincronizando…</span>
+        <span v-else class="px-3 py-2 rounded-full bg-emerald-100 text-emerald-800 text-sm">Listo</span>
+        <button v-if="user" class="px-3 py-2 rounded-lg text-white text-sm" style="background:#6B1535" @click="signOut">Cerrar sesión</button>
+      </div>
     </div>
-
-    <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
-      <div v-if="!user" class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center py-10">
-        <div class="space-y-6">
-          <div class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">Panel operativo para equipos</div>
-          <h2 class="text-4xl font-semibold leading-tight">Centraliza proyectos, turnos, documentos y eventos en un solo lugar.</h2>
-          <p class="text-lg text-slate-600">Tu equipo podrá registrar avances, atender solicitudes y ver el estado general del trabajo con orden.</p>
-          <div class="grid sm:grid-cols-3 gap-3">
-            <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold">{{ kpi.proyectosActivos }}</div><div class="text-sm text-slate-500">Proyectos activos</div></div>
-            <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold text-amber-600">{{ kpi.turnosPendientes }}</div><div class="text-sm text-slate-500">Turnos pendientes</div></div>
-            <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold">{{ kpi.eventosHoy }}</div><div class="text-sm text-slate-500">Eventos hoy</div></div>
-          </div>
-        </div>
-        <div class="bg-white border rounded-3xl shadow-sm p-6 space-y-4">
-          <div class="flex gap-2">
-            <button class="flex-1 rounded-full px-3 py-2 text-sm" :class="authMode==='signin' ? 'bg-indigo-600 text-white' : 'bg-slate-100'" @click="authMode='signin'">Iniciar sesión</button>
-            <button class="flex-1 rounded-full px-3 py-2 text-sm" :class="authMode==='signup' ? 'bg-indigo-600 text-white' : 'bg-slate-100'" @click="authMode='signup'">Crear cuenta</button>
-          </div>
-          <form @submit.prevent="submitAuth" class="space-y-3">
-            <input v-if="authMode==='signup'" v-model="authForm.name" type="text" placeholder="Tu nombre" class="w-full border rounded-xl px-3 py-2" required>
-            <input v-model="authForm.email" type="email" placeholder="Correo del equipo" class="w-full border rounded-xl px-3 py-2" required>
-            <input v-model="authForm.password" type="password" placeholder="Contraseña" class="w-full border rounded-xl px-3 py-2" required>
-            <button class="w-full rounded-xl bg-indigo-600 text-white py-2" :disabled="authLoading">{{ authMode==='signin' ? 'Entrar' : 'Crear cuenta' }}</button>
-            <p v-if="authError" class="text-sm text-rose-600">{{ authError }}</p>
-          </form>
-          <button class="w-full rounded-xl border border-slate-200 py-2 text-sm" @click="enterDemo">Continuar en modo demo</button>
-          <p class="text-xs text-slate-500">Con Supabase Auth cada miembro puede entrar con su cuenta y ver los cambios en tiempo real.</p>
-        </div>
+    <nav class="bg-white border-t" style="border-color:#e8d0d8">
+      <div class="max-w-7xl mx-auto px-4">
+        <ul class="flex gap-2 overflow-x-auto py-2">
+          <li v-for="t in tabs" :key="t.id">
+            <button
+              class="px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors"
+              :style="tab===t.id ? 'background:#6B1535;color:#fff' : 'color:#4b5563'"
+              :class="tab!==t.id ? 'hover:bg-rose-50' : ''"
+              @click="onTabChange(t.id)">{{ t.label }}</button>
+          </li>
+        </ul>
       </div>
+    </nav>
+  </header>
 
-      <div v-else class="space-y-6">
-        <section class="bg-gradient-to-br from-indigo-600 via-violet-600 to-slate-900 text-white rounded-3xl p-6 shadow-lg">
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p class="text-sm uppercase tracking-[0.2em] text-indigo-100">Panel de operación</p>
-              <h2 class="text-2xl font-semibold">Hola, {{ getUserName() }}</h2>
-              <p class="text-indigo-100 mt-1">Tu equipo puede registrar tareas, turnos, eventos y documentos desde aquí.</p>
-            </div>
-            <div class="rounded-2xl bg-white/15 px-4 py-3"><div class="text-sm text-indigo-100">Hoy</div><div class="text-xl font-semibold">{{ formatDate(new Date().toISOString().slice(0,10)) }}</div></div>
-          </div>
-        </section>
-
-        <section v-show="tab==='resumen'" class="space-y-6">
-          <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Proyectos activos</div><div class="text-3xl font-semibold">{{ kpi.proyectosActivos }}</div></div>
-            <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Tareas abiertas</div><div class="text-3xl font-semibold">{{ kpi.tareasAbiertas }}</div></div>
-            <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Turnos pendientes</div><div class="text-3xl font-semibold text-amber-600">{{ kpi.turnosPendientes }}</div></div>
-            <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Eventos hoy</div><div class="text-3xl font-semibold text-violet-600">{{ kpi.eventosHoy }}</div></div>
-          </div>
-          <div class="grid xl:grid-cols-[1.1fr_0.9fr] gap-6">
-            <div class="bg-white border rounded-2xl p-4 shadow-sm space-y-3"><h3 class="font-semibold">Próximos vencimientos</h3><ul class="space-y-2 text-sm"><li v-if="proximosVencimientos.length===0" class="text-slate-500">Sin vencimientos próximos.</li><li v-for="t in proximosVencimientos" :key="t.id" class="flex items-center justify-between border-b py-2 last:border-0"><span class="truncate">{{ t.title }} <span class="text-slate-500">• {{ projectName(t.project_id) }}</span></span><span class="text-xs text-slate-700">{{ formatDate(t.due_date) }}</span></li></ul></div>
-            <div class="bg-white border rounded-2xl p-4 shadow-sm space-y-3"><h3 class="font-semibold">Últimas actividades</h3><ul class="space-y-2 text-sm"><li v-if="ultimasActividades.length===0" class="text-slate-500">Aún no hay registros.</li><li v-for="a in ultimasActividades" :key="a.id" class="flex items-center justify-between border-b py-2 last:border-0"><span class="truncate">{{ a.notes || a.sender || a.title || '(Sin descripción)' }}</span><span class="text-xs text-slate-700">{{ formatDate(a.date) }}</span></li></ul></div>
-          </div>
-        </section>
-
-        <section v-for="s in sections" :key="s.id" v-show="tab===s.id" class="bg-white border rounded-2xl p-4 shadow-sm space-y-6">
-          <div class="flex items-center justify-between gap-3"><h2 class="font-semibold text-lg">{{ s.title }}</h2><div class="text-sm text-slate-500">{{ DB[s.id].length }} registros</div></div>
-          <form @submit.prevent="save(s.id, s.form, s.defaults)" class="grid md:grid-cols-6 gap-4">
-            <template v-for="field in s.fields" :key="field.key">
-              <div :class="field.span || 'md:col-span-1'">
-                <label class="block text-sm mb-1">{{ field.label }}</label>
-                <input v-if="['text','date','time'].includes(field.type)" :type="field.type" v-model="s.form[field.key]" class="w-full border rounded-xl px-3 py-2" :required="field.required" />
-                <select v-if="field.type==='select'" v-model="s.form[field.key]" class="w-full border rounded-xl px-3 py-2" :required="field.required"><option :value="field.default" disabled>{{ field.placeholder || 'Selecciona' }}</option><option v-for="opt in field.options" :key="opt.value" :value="opt.value">{{ opt.label }}</option></select>
-                <select v-if="field.type==='select-dynamic'" v-model="s.form[field.key]" class="w-full border rounded-xl px-3 py-2" :required="field.required"><option :value="null" disabled>Selecciona un proyecto</option><option v-for="p in DB.projects" :key="p.id" :value="p.id">{{ p.name }}</option></select>
-                <textarea v-if="field.type==='textarea'" v-model.trim="s.form[field.key]" class="w-full border rounded-xl px-3 py-2" rows="2"></textarea>
-                <div v-if="field.type==='range'" class="flex items-center gap-2"><input type="range" v-model.number="s.form[field.key]" min="0" max="100" class="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer" /><span class="text-sm font-medium">{{ s.form[field.key] }}%</span></div>
-              </div>
-            </template>
-            <div class="md:col-span-6 flex items-center gap-2"><button class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Guardar</button><button type="button" @click="resetForm(s.form, s.defaults)" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200">Limpiar</button></div>
-          </form>
-          <div class="overflow-auto"><table class="w-full text-sm table"><thead class="bg-slate-50"><tr class="text-left"><th v-for="h in s.headers" :key="h.key" class="p-2" :class="h.class">{{ h.label }}</th><th class="p-2 text-right">Acciones</th></tr></thead><tbody><tr v-if="DB[s.id].length===0"><td :colspan="s.headers.length+1" class="p-4 text-center text-slate-500">No hay registros.</td></tr><tr v-for="item in DB[s.id]" :key="item.id" class="border-b"><td v-for="h in s.headers" :key="h.key" class="p-2"><template v-if="h.key==='progress'"><div class="flex items-center progress-cell"><div class="w-full progress-wrap"><div class="progress-bar" :style="{width:item.progress+'%'}"></div></div><span class="progress-text">{{ item.progress }}%</span></div></template><template v-else-if="h.format==='date'">{{ formatDate(item[h.key]) }}</template><template v-else-if="h.format==='project'">{{ projectName(item[h.key]) }}</template><template v-else-if="h.type==='badge-status'"><span class="badge" :class="statusClass(item[h.key])">{{ item[h.key] }}</span></template><template v-else-if="h.type==='badge-priority'"><span class="badge" :class="priorityClass(item[h.key])">{{ item[h.key] }}</span></template><template v-else>{{ item[h.key] || '—' }}</template></td><td class="p-2 text-right space-x-2"><button class="link" @click="edit(s.form, item)">Editar</button><button class="text-rose-600 hover:underline" @click="del(s.id, item.id)">Eliminar</button></td></tr></tbody></table></div>
-        </section>
-
-        <section v-show="tab==='calendar'" class="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
-          <div class="flex items-center justify-between"><div><h2 class="font-semibold text-lg">Calendario operativo</h2><p class="text-sm text-slate-500">Controla eventos, tareas y turnos por día</p></div><div class="flex items-center gap-2"><button class="px-3 py-2 border rounded-xl" @click="prevMonth">◀</button><div class="min-w-[180px] text-center font-medium capitalize">{{ calendarLabel }}</div><button class="px-3 py-2 border rounded-xl" @click="nextMonth">▶</button></div></div>
-          <div class="grid grid-cols-7 gap-2 text-xs font-semibold uppercase text-slate-500"><div class="text-center">Lun</div><div class="text-center">Mar</div><div class="text-center">Mié</div><div class="text-center">Jue</div><div class="text-center">Vie</div><div class="text-center">Sáb</div><div class="text-center">Dom</div></div>
-          <div class="grid grid-cols-7 gap-2"><button v-for="cell in calendarDays" :key="cell.date" @click="selectDay(cell.date)" class="border rounded-xl p-2 text-left calendar-day" :class="[cell.date===selectedDay ? 'calendar-day--selected' : '', cell.date===todayDate ? 'calendar-day--today' : '', cell.inMonth ? 'bg-white' : 'bg-slate-50 text-slate-400']"><div class="text-sm font-medium">{{ cell.day }}</div><div v-if="dayItems(cell.date).length" class="text-[11px] mt-2 text-slate-600">{{ dayItems(cell.date).length }} registros</div></button></div>
-          <div class="border-t pt-4"><h3 class="font-medium mb-2">Actividades para {{ formatDate(selectedDay) }}</h3><ul v-if="calendarItems.length" class="space-y-2 text-sm"><li v-for="item in calendarItems" :key="item.id + item.kind" class="flex items-center justify-between border-b py-2 last:border-0"><span>{{ item.label }} <span class="text-slate-500">• {{ item.kind }}</span></span><span class="text-slate-500">{{ item.time || '' }}</span></li></ul><p v-else class="text-sm text-slate-500">Sin registros para este día.</p></div>
-        </section>
-
-        <section v-show="tab==='gantt'" class="bg-white border rounded-2xl p-4 shadow-sm"><h2 class="font-semibold text-lg mb-4">Diagrama de Gantt</h2><div id="gantt-container" class="overflow-auto"><div id="gantt" class="min-w-full"></div></div></section>
-        <section v-show="tab==='graficos'" class="bg-white border rounded-2xl p-4 shadow-sm"><h2 class="font-semibold text-lg mb-4">Gráficos de desempeño</h2><div class="grid md:grid-cols-2 gap-6"><div><h3 class="font-medium mb-2 text-sm">Tareas por estado</h3><div class="relative h-72"><canvas id="chart-estado"></canvas></div></div><div><h3 class="font-medium mb-2 text-sm">Turnos por prioridad</h3><div class="relative h-72"><canvas id="chart-prioridad-turnos"></canvas></div></div></div></section>
-      </div>
-    </main>
-
-    <footer class="text-center text-xs text-slate-500 py-6">Gestor de Proyectos v6 · preparado para Supabase y trabajo en equipo.</footer>
+  <!-- Error banner -->
+  <div v-if="error" class="max-w-7xl mx-auto w-full px-4 mt-4">
+    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-900 text-sm cursor-pointer" @click="error=null">{{ error }}</div>
   </div>
 
-  <script>
-  const { createApp, reactive, ref, computed, onMounted, nextTick } = Vue;
-  const SUPABASE_URL = 'https://dumwkyqnsohmosirzdux.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1bXdreXFuc29obW9zaXJ6ZHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NTg0ODIsImV4cCI6MjA3MzAzNDQ4Mn0.kUi-2C6E3g4gV_dDX0s9wbho_m4dQpI8Oixpr8Zeg8U';
-  const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  createApp({
-    setup() {
-      const today = new Date().toISOString().slice(0,10);
-      const now = new Date().toTimeString().slice(0,5);
-      const loading = ref(false);
-      const error = ref(null);
-      const tab = ref('resumen');
-      const DB = reactive({ projects:[], tasks:[], activities:[], requests:[], communications:[], events:[] });
-      const formProjectDefaults = { id:null, name:'', start_date:'', end_date:'', status:'Planificado', progress:0, notes:'' };
-      const formTaskDefaults = { id:null, project_id:null, title:'', start_date:'', due_date:'', responsible:'', priority:'Media', status:'Planificado', progress:0, notes:'' };
-      const formActivityDefaults = { id:null, date:today, time:now, person:'', notes:'' };
-      const formRequestDefaults = { id:null, identifier:'', sender:'', date:today, time:now, notes:'', priority:'Media', status:'Pendiente', type:'Atender' };
-      const formCommunicationDefaults = { id:null, project_id:null, identifier:'', recipient:'', date:today, subject:'', notes:'', type:'Oficio' };
-      const formEventDefaults = { id:null, title:'', date:today, time:now, location:'', notes:'', type:'Reunión' };
-      const sections = reactive({
-        projects:{ id:'projects', title:'Proyectos', form:{...formProjectDefaults}, defaults:formProjectDefaults, fields:[{ key:'name', label:'Nombre', type:'text', required:true, span:'md:col-span-3' },{ key:'start_date', label:'Fecha Inicio', type:'date' },{ key:'end_date', label:'Fecha Fin', type:'date' },{ key:'status', label:'Estado', type:'select', default:'Planificado', options:[{value:'Planificado',label:'Planificado'},{value:'En curso',label:'En curso'},{value:'Pausado',label:'Pausado'},{value:'Completado',label:'Completado'},{value:'Cancelado',label:'Cancelado'}] },{ key:'notes', label:'Notas', type:'textarea', span:'md:col-span-4' },{ key:'progress', label:'Progreso', type:'range', span:'md:col-span-2' }], headers:[{ key:'name', label:'Nombre' },{ key:'start_date', label:'Inicio', format:'date' },{ key:'end_date', label:'Fin', format:'date' },{ key:'progress', label:'Progreso', class:'progress-cell' },{ key:'status', label:'Estado', type:'badge-status' }] },
-        tasks:{ id:'tasks', title:'Tareas', form:{...formTaskDefaults}, defaults:formTaskDefaults, fields:[{ key:'project_id', label:'Proyecto', type:'select-dynamic', required:true, span:'md:col-span-2' },{ key:'title', label:'Título', type:'text', required:true, span:'md:col-span-4' },{ key:'start_date', label:'Inicio', type:'date' },{ key:'due_date', label:'Vence', type:'date' },{ key:'responsible', label:'Responsable', type:'text' },{ key:'priority', label:'Prioridad', type:'select', default:'Media', options:[{value:'Baja',label:'Baja'},{value:'Media',label:'Media'},{value:'Alta',label:'Alta'},{value:'Crítica',label:'Crítica'}] },{ key:'status', label:'Estado', type:'select', default:'Planificado', options:[{value:'Planificado',label:'Planificado'},{value:'En Curso',label:'En Curso'},{value:'Pausado',label:'Pausado'},{value:'Completado',label:'Completado'}] },{ key:'notes', label:'Notas', type:'textarea', span:'md:col-span-4' },{ key:'progress', label:'Progreso', type:'range', span:'md:col-span-2' }], headers:[{ key:'title', label:'Título' },{ key:'project_id', label:'Proyecto', format:'project' },{ key:'due_date', label:'Vence', format:'date' },{ key:'progress', label:'Progreso', class:'progress-cell' },{ key:'priority', label:'Prioridad', type:'badge-priority' },{ key:'status', label:'Estado', type:'badge-status' }] },
-        activities:{ id:'activities', title:'Actividades generales', form:{...formActivityDefaults}, defaults:formActivityDefaults, fields:[{ key:'person', label:'Persona', type:'text', span:'md:col-span-2' },{ key:'date', label:'Fecha', type:'date' },{ key:'time', label:'Hora', type:'time' },{ key:'notes', label:'Notas', type:'textarea', span:'md:col-span-6' }], headers:[{ key:'date', label:'Fecha', format:'date' },{ key:'time', label:'Hora' },{ key:'person', label:'Persona' },{ key:'notes', label:'Notas' }] },
-        requests:{ id:'requests', title:'Turnos y solicitudes', form:{...formRequestDefaults}, defaults:formRequestDefaults, fields:[{ key:'identifier', label:'ID Turno', type:'text' },{ key:'sender', label:'Remitente', type:'text', span:'md:col-span-2' },{ key:'date', label:'Fecha', type:'date' },{ key:'time', label:'Hora', type:'time' },{ key:'status', label:'Estado', type:'select', default:'Pendiente', options:[{value:'Pendiente',label:'Pendiente'},{value:'Atendido',label:'Atendido'}] },{ key:'priority', label:'Prioridad', type:'select', default:'Media', span:'md:col-span-2', options:[{value:'Baja',label:'Baja'},{value:'Media',label:'Media'},{value:'Alta',label:'Alta'},{value:'Urgente',label:'Urgente'}] },{ key:'type', label:'Tipo', type:'select', default:'Atender', span:'md:col-span-2', options:[{value:'Atender',label:'Atender'},{value:'Conocimiento',label:'Conocimiento'}] },{ key:'notes', label:'Detalle', type:'textarea', span:'md:col-span-6' }], headers:[{ key:'identifier', label:'ID' },{ key:'date', label:'Fecha', format:'date' },{ key:'sender', label:'Remitente' },{ key:'notes', label:'Detalle' },{ key:'priority', label:'Prioridad', type:'badge-priority' },{ key:'status', label:'Estado', type:'badge-status' }] },
-        communications:{ id:'communications', title:'Oficios y comunicaciones', form:{...formCommunicationDefaults}, defaults:formCommunicationDefaults, fields:[{ key:'project_id', label:'Proyecto (opcional)', type:'select-dynamic', span:'md:col-span-2' },{ key:'identifier', label:'ID Documento', type:'text' },{ key:'recipient', label:'Destinatario', type:'text', span:'md:col-span-2' },{ key:'date', label:'Fecha', type:'date' },{ key:'type', label:'Tipo', type:'select', default:'Oficio', options:[{value:'Oficio',label:'Oficio'},{value:'Tarjeta Informativa',label:'Tarjeta Informativa'}] },{ key:'subject', label:'Asunto', type:'text', span:'md:col-span-5' },{ key:'notes', label:'Notas adicionales', type:'textarea', span:'md:col-span-6' }], headers:[{ key:'identifier', label:'ID' },{ key:'date', label:'Fecha', format:'date' },{ key:'type', label:'Tipo' },{ key:'subject', label:'Asunto' },{ key:'recipient', label:'Destinatario' },{ key:'project_id', label:'Proyecto', format:'project' }] },
-        events:{ id:'events', title:'Eventos del equipo', form:{...formEventDefaults}, defaults:formEventDefaults, fields:[{ key:'title', label:'Título', type:'text', required:true, span:'md:col-span-3' },{ key:'date', label:'Fecha', type:'date' },{ key:'time', label:'Hora', type:'time' },{ key:'type', label:'Tipo', type:'select', default:'Reunión', options:[{value:'Reunión',label:'Reunión'},{value:'Capacitación',label:'Capacitación'},{value:'Entrega',label:'Entrega'},{value:'Otro',label:'Otro'}] },{ key:'location', label:'Lugar', type:'text', span:'md:col-span-2' },{ key:'notes', label:'Detalle', type:'textarea', span:'md:col-span-6' }], headers:[{ key:'title', label:'Título' },{ key:'date', label:'Fecha', format:'date' },{ key:'time', label:'Hora' },{ key:'location', label:'Lugar' },{ key:'type', label:'Tipo' }] }
-      });
-      const tabs = [{ id:'resumen', label:'Resumen' },{ id:'projects', label:'Proyectos' },{ id:'tasks', label:'Tareas' },{ id:'requests', label:'Turnos' },{ id:'events', label:'Eventos' },{ id:'communications', label:'Documentos' },{ id:'activities', label:'Actividades' },{ id:'calendar', label:'Calendario' },{ id:'gantt', label:'Gantt' },{ id:'graficos', label:'Gráficos' }];
-      const formatDate = (d)=>{ try { if(!d) return '—'; const parsed = new Date(typeof d==='string' && d.includes('-') ? d : d.replace(/-/g,'/')); if(Number.isNaN(parsed.getTime())) return d; return parsed.toLocaleDateString('es-ES',{ day:'2-digit', month:'short', year:'numeric' }); } catch { return d; } };
-      const projectName = (id)=>DB.projects.find(p=>p.id===id)?.name || '—';
-      const statusClass = (s)=>({ 'Planificado':'badge-gray','En Curso':'badge-blue','Pausado':'badge-yellow','Completado':'badge-green','En curso':'badge-blue','Pendiente':'badge-yellow','Atendido':'badge-green' }[s] || 'badge-gray');
-      const priorityClass = (p)=>({ 'Baja':'badge-gray','Media':'badge-blue','Alta':'badge-yellow','Crítica':'badge-red','Urgente':'badge-red' }[p] || 'badge-gray');
-      const kpi = computed(()=>{ const hoy=today; return { proyectosActivos:DB.projects.filter(p=>p.status==='En curso'||p.status==='En Curso').length, tareasAbiertas:DB.tasks.filter(t=>t.status!=='Completado').length, turnosPendientes:DB.requests.filter(r=>r.status==='Pendiente').length, eventosHoy:DB.events.filter(e=>e.date===hoy).length }; });
-      const proximosVencimientos = computed(()=>{ const hoy=new Date(); const d7=new Date(); d7.setDate(hoy.getDate()+7); return DB.tasks.filter(t=>t.due_date && new Date(t.due_date)>=hoy && new Date(t.due_date)<=d7).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date)); });
-      const ultimasActividades = computed(()=>[...DB.activities,...DB.requests].sort((a,b)=>new Date(b.date||'1970-01-01')-new Date(a.date||'1970-01-01')).slice(0,6));
-      const authMode = ref('signin');
-      const authForm = reactive({ email:'', password:'', name:'' });
-      const authLoading = ref(false);
-      const authError = ref(null);
-      const user = ref(null);
-      const STORAGE_KEY='gestor-proyectos-v6-data';
-      const monthCursor=ref(new Date());
-      const selectedDay=ref(today);
-      const todayDate = today;
-      function getUserName(){ return user.value?.user_metadata?.name || user.value?.email || 'Miembro del equipo'; }
-      function setDbFromSnapshot(snapshot){ DB.projects=snapshot.projects||[]; DB.tasks=snapshot.tasks||[]; DB.activities=snapshot.activities||[]; DB.requests=snapshot.requests||[]; DB.communications=snapshot.communications||[]; DB.events=snapshot.events||[]; }
-      function saveToLocalStorage(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({ projects:DB.projects, tasks:DB.tasks, activities:DB.activities, requests:DB.requests, communications:DB.communications, events:DB.events })); }
-      function loadFromLocalStorage(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return null; const snapshot=JSON.parse(raw); setDbFromSnapshot(snapshot); return snapshot; } catch(e){ console.warn('No se pudo leer respaldo local', e); return null; } }
-      const normalizePayload=(payload)=>{ const p={...payload}; Object.keys(p).forEach(k=>{ if(p[k]==='') p[k]=null; }); return p; };
-      async function save(table, form, defaults){ loading.value=true; error.value=null; const payload=normalizePayload(form); payload.updated_at=new Date().toISOString(); try{ let res; if(form.id){ res = await supa.from(table).update(payload).eq('id', form.id).select().single(); } else { res = await supa.from(table).insert(payload).select().single(); } if(res.error) throw res.error; await fetchAll(); resetForm(form, defaults); } catch(err){ const list=Array.isArray(DB[table]) ? [...DB[table]] : []; const updated=form.id ? list.map(item=>item.id===form.id ? {...item,...payload} : item) : [...list,{ ...payload, id: payload.id || Date.now() }]; DB[table]=updated; saveToLocalStorage(); resetForm(form, defaults); error.value=`Se guardó localmente. ${err.message}`; } finally{ loading.value=false; } }
-      async function del(table,id){ if(!confirm('¿Seguro que quieres eliminar este registro?')) return; loading.value=true; error.value=null; try{ const { error:e }=await supa.from(table).delete().eq('id',id); if(e) throw e; await fetchAll(); } catch(err){ DB[table]=DB[table].filter(item=>item.id!==id); saveToLocalStorage(); error.value=`Se eliminó localmente. ${err.message}`; } finally{ loading.value=false; } }
-      const edit=(form,item)=>Object.assign(form, JSON.parse(JSON.stringify(item)));
-      const resetForm=(form,defaults)=>Object.assign(form,{...defaults,id:null});
-      async function fetchTable(table, fallback=[]){ try{ const { data, error }=await supa.from(table).select('*'); if(error) throw error; return (data||[]).map(item=>({...item})); } catch(err){ console.warn(`No se pudo cargar ${table}`, err); return fallback; } }
-      async function fetchAll(){ loading.value=true; try{ const snapshot=loadFromLocalStorage(); const [projects,tasks,activities,requests,communications,events]=await Promise.all([ fetchTable('projects', snapshot?.projects||[]), fetchTable('tasks', snapshot?.tasks||[]), fetchTable('activities', snapshot?.activities||[]), fetchTable('requests', snapshot?.requests||[]), fetchTable('communications', snapshot?.communications||[]), fetchTable('events', snapshot?.events||[]) ]); setDbFromSnapshot({ projects, tasks, activities, requests, communications, events }); saveToLocalStorage(); hydrateViews(); } catch(err){ error.value=`No se pudieron cargar los datos: ${err.message}`; } finally{ loading.value=false; } }
-      let ganttInstance=null; let chartEstado=null; let chartPrioridadTurnos=null;
-      function hydrateViews(){ nextTick(()=>{ if(tab.value==='gantt') renderGantt(); if(tab.value==='graficos') renderCharts(); }); }
-      const onTabChange=(newTab)=>{ tab.value=newTab; nextTick(()=>hydrateViews()); };
-      function renderGantt(){ const container=document.getElementById('gantt'); if(!container) return; container.innerHTML=''; const ganttTasks=DB.tasks.filter(t=>t.start_date&&t.due_date).map(t=>({ id:t.id, name:t.title, start:t.start_date, end:t.due_date, progress:t.progress||0 })); if(ganttTasks.length===0){ container.innerHTML='<div class="text-sm text-slate-500 p-4">Añade tareas con fechas para ver el avance en Gantt.</div>'; return; } if(ganttInstance){ ganttInstance.refresh(ganttTasks); return; } ganttInstance=new Gantt(container,ganttTasks,{ language:'es', custom_popup_html:task=>`<div class="p-2 text-sm"><b>${task.name}</b><br>Progreso: ${task.progress}%</div>` }); }
-      function renderCharts(){ const ctx1=document.getElementById('chart-estado')?.getContext('2d'); const ctx2=document.getElementById('chart-prioridad-turnos')?.getContext('2d'); if(!ctx1||!ctx2) return; const estados=['Planificado','En Curso','Pausado','Completado']; const dataEstados=estados.map(s=>DB.tasks.filter(t=>t.status===s).length); if(chartEstado) chartEstado.destroy(); chartEstado=new Chart(ctx1,{ type:'doughnut', data:{ labels:estados, datasets:[{ data:dataEstados, backgroundColor:['#e5e7eb','#93c5fd','#fde68a','#86efac'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } } }); const prioridades=['Baja','Media','Alta','Urgente']; const dataPrioridades=prioridades.map(p=>DB.requests.filter(r=>r.priority===p).length); if(chartPrioridadTurnos) chartPrioridadTurnos.destroy(); chartPrioridadTurnos=new Chart(ctx2,{ type:'bar', data:{ labels:prioridades, datasets:[{ label:'Turnos', data:dataPrioridades, backgroundColor:['#a5b4fc','#818cf8','#facc15','#ef4444'] }] }, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }, plugins:{ legend:{ display:false } } } }); }
-      const calendarLabel = computed(()=>monthCursor.value.toLocaleDateString('es-ES',{ month:'long', year:'numeric' }));
-      function formatCalendarDate(year,month,day){ const m=String(month+1).padStart(2,'0'); const d=String(day).padStart(2,'0'); return `${year}-${m}-${d}`; }
-      const calendarDays = computed(()=>{ const year=monthCursor.value.getFullYear(); const month=monthCursor.value.getMonth(); const firstDay=new Date(year,month,1); const startWeek=(firstDay.getDay()+6)%7; const totalDays=new Date(year,month+1,0).getDate(); const prevMonthDays=new Date(year,month,0).getDate(); const cells=[]; for(let i=startWeek-1;i>=0;i--){ const day=prevMonthDays-i; cells.push({ day, inMonth:false, date:formatCalendarDate(year,month-1,day) }); } for(let day=1;day<=totalDays;day++){ cells.push({ day, inMonth:true, date:formatCalendarDate(year,month,day) }); } while(cells.length%7!==0){ const nextDay=cells.length-totalDays-startWeek+1; cells.push({ day:nextDay, inMonth:false, date:formatCalendarDate(year,month+1,nextDay) }); } return cells; });
-      function dayItems(date){ const items=[]; DB.events.forEach(item=>{ if(item.date===date) items.push({ ...item, kind:'evento', label:item.title||'Evento' }); }); DB.tasks.forEach(item=>{ if(item.due_date===date) items.push({ ...item, kind:'tarea', label:item.title||'Tarea' }); }); DB.requests.forEach(item=>{ if(item.date===date) items.push({ ...item, kind:'turno', label:item.identifier||'Turno' }); }); return items.sort((a,b)=>(a.time||'').localeCompare(b.time||'')); }
-      const calendarItems = computed(()=>dayItems(selectedDay.value));
-      function prevMonth(){ const next=new Date(monthCursor.value); next.setMonth(next.getMonth()-1); monthCursor.value=next; }
-      function nextMonth(){ const next=new Date(monthCursor.value); next.setMonth(next.getMonth()+1); monthCursor.value=next; }
-      function selectDay(date){ selectedDay.value=date; tab.value='calendar'; }
-      async function submitAuth(){ authLoading.value=true; authError.value=null; try{ if(authMode.value==='signin'){ const { data, error:authErr }=await supa.auth.signInWithPassword({ email:authForm.email, password:authForm.password }); if(authErr) throw authErr; user.value=data.user; } else{ const { data, error:authErr }=await supa.auth.signUp({ email:authForm.email, password:authForm.password, options:{ data:{ name:authForm.name } } }); if(authErr) throw authErr; user.value=data.user; if(!data.session) authError.value='Revisa tu correo para confirmar la cuenta.'; } await fetchAll(); } catch(err){ authError.value=err.message; } finally{ authLoading.value=false; } }
-      function enterDemo(){ user.value={ email:'demo@equipo.local', user_metadata:{ name:'Equipo demo' } }; fetchAll(); }
-      async function signOut(){ await supa.auth.signOut(); user.value=null; authForm.email=''; authForm.password=''; authForm.name=''; loadFromLocalStorage(); }
-      function exportar(){ const dataStr=JSON.stringify({ projects:DB.projects, tasks:DB.tasks, activities:DB.activities, requests:DB.requests, communications:DB.communications, events:DB.events, exportDate:new Date().toISOString() }, null, 2); const blob=new Blob([dataStr],{ type:'application/json' }); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`proyectos-backup-${today}.json`; a.click(); URL.revokeObjectURL(a.href); }
-      async function importar(evt){ const file=evt.target.files?.[0]; if(!file) return; try{ const json=JSON.parse(await file.text()); if(json.projects) setDbFromSnapshot(json); error.value='Importación lista para revisión.'; saveToLocalStorage(); } catch(e){ error.value=`Error al leer el archivo JSON: ${e.message}`; } evt.target.value=''; }
-      onMounted(async()=>{ loadFromLocalStorage(); await fetchAll(); });
-      return { loading, error, tab, tabs, onTabChange, DB, sections, formatDate, projectName, statusClass, priorityClass, kpi, proximosVencimientos, ultimasActividades, save, del, edit, resetForm, exportar, importar, authMode, authForm, authLoading, authError, user, submitAuth, enterDemo, signOut, getUserName, monthCursor, calendarLabel, calendarDays, selectedDay, calendarItems, prevMonth, nextMonth, selectDay, dayItems, todayDate };
+  <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
+
+    <!-- Panel Supabase -->
+    <section class="bg-white border rounded-3xl p-5 shadow-sm space-y-4 mb-6">
+      <div v-if="!supabasePanelCollapsed">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 class="font-semibold">Conexión a Supabase</h3>
+            <p class="text-sm text-slate-600">Copia la URL y la anon key desde Project Settings → API en tu proyecto de Supabase.</p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-sm" :class="supabaseConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">{{ supabaseConnected ? 'Conectado' : 'Pendiente' }}</span>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3 mb-3">
+          <input v-model="supabaseUrl" placeholder="https://tu-proyecto.supabase.co" class="w-full border rounded-xl px-3 py-2" />
+          <input v-model="supabaseKey" placeholder="anon key" class="w-full border rounded-xl px-3 py-2" />
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="px-4 py-2 rounded-xl text-white" style="background:#6B1535" @click="guardarSupabase">Guardar conexión</button>
+          <button class="px-4 py-2 rounded-xl border border-slate-200" @click="probarSupabase">Probar conexión</button>
+          <button class="px-4 py-2 rounded-xl border border-slate-200" @click="supabasePanelCollapsed=true">Ocultar</button>
+        </div>
+      </div>
+      <div v-else class="flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold">Conexión a Supabase</h3>
+          <p class="text-sm text-slate-600 truncate max-w-lg">{{ supabaseUrl || 'Sin configurar' }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="px-3 py-1 rounded-full text-sm" :class="supabaseConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">{{ supabaseConnected ? 'Conectado' : 'Pendiente' }}</span>
+          <button class="px-3 py-2 rounded-xl border" @click="supabasePanelCollapsed=false">Editar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Login -->
+    <div v-if="!user" class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center py-10">
+      <div class="space-y-6">
+        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" style="background:#f5e6eb;color:#6B1535">Panel operativo para equipos</div>
+        <h2 class="text-4xl font-semibold leading-tight">Centraliza proyectos, turnos, documentos y eventos en un solo lugar.</h2>
+        <p class="text-lg text-slate-600">Tu equipo podrá registrar avances, atender solicitudes y ver el estado general del trabajo con orden.</p>
+        <div class="grid sm:grid-cols-3 gap-3">
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold" style="color:#6B1535">{{ kpi.proyectosActivos }}</div><div class="text-sm text-slate-500">Proyectos activos</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold text-amber-600">{{ kpi.turnosPendientes }}</div><div class="text-sm text-slate-500">Turnos pendientes</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-2xl font-semibold" style="color:#6B1535">{{ kpi.eventosHoy }}</div><div class="text-sm text-slate-500">Eventos hoy</div></div>
+        </div>
+      </div>
+      <div class="bg-white border rounded-3xl shadow-sm p-6 space-y-4">
+        <div class="flex gap-2">
+          <button class="flex-1 rounded-full px-3 py-2 text-sm transition-colors" :style="authMode==='signin' ? 'background:#6B1535;color:#fff' : ''" :class="authMode!=='signin' ? 'bg-slate-100' : ''" @click="authMode='signin'">Iniciar sesión</button>
+          <button class="flex-1 rounded-full px-3 py-2 text-sm transition-colors" :style="authMode==='signup' ? 'background:#6B1535;color:#fff' : ''" :class="authMode!=='signup' ? 'bg-slate-100' : ''" @click="authMode='signup'">Crear cuenta</button>
+        </div>
+        <form @submit.prevent="submitAuth" class="space-y-3">
+          <input v-if="authMode==='signup'" v-model="authForm.name" type="text" placeholder="Tu nombre" class="w-full border rounded-xl px-3 py-2" required>
+          <input v-model="authForm.email" type="email" placeholder="Correo del equipo" class="w-full border rounded-xl px-3 py-2" required>
+          <input v-model="authForm.password" type="password" placeholder="Contraseña" class="w-full border rounded-xl px-3 py-2" required>
+          <button class="w-full rounded-xl text-white py-2" style="background:#6B1535" :disabled="authLoading">{{ authMode==='signin' ? 'Entrar' : 'Crear cuenta' }}</button>
+          <p v-if="authError" class="text-sm text-rose-600">{{ authError }}</p>
+        </form>
+        <button class="w-full rounded-xl border border-slate-200 py-2 text-sm" @click="enterDemo">Continuar en modo demo</button>
+      </div>
+    </div>
+
+    <!-- App principal -->
+    <div v-else class="space-y-6">
+      <section class="text-white rounded-3xl p-6 shadow-lg" style="background:linear-gradient(135deg,#6B1535 0%,#8c1a43 50%,#3d0c1e 100%)">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p class="text-sm uppercase tracking-[0.2em]" style="color:#f5c6d5">Panel de operación</p>
+            <h2 class="text-2xl font-semibold">Hola, {{ getUserName() }}</h2>
+            <p class="mt-1" style="color:#f5c6d5">Tu equipo puede registrar tareas, turnos, eventos y documentos desde aquí.</p>
+          </div>
+          <div class="rounded-2xl px-4 py-3" style="background:rgba(255,255,255,0.15)">
+            <div class="text-sm" style="color:#f5c6d5">Hoy</div>
+            <div class="text-xl font-semibold">{{ formatDate(todayStr()) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Resumen -->
+      <section v-show="tab==='resumen'" class="space-y-6">
+        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Proyectos activos</div><div class="text-3xl font-semibold" style="color:#6B1535">{{ kpi.proyectosActivos }}</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Tareas abiertas</div><div class="text-3xl font-semibold">{{ kpi.tareasAbiertas }}</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Turnos pendientes</div><div class="text-3xl font-semibold text-amber-600">{{ kpi.turnosPendientes }}</div></div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm"><div class="text-sm text-slate-500">Eventos hoy</div><div class="text-3xl font-semibold" style="color:#6B1535">{{ kpi.eventosHoy }}</div></div>
+        </div>
+        <div class="grid xl:grid-cols-[1.1fr_0.9fr] gap-6">
+          <div class="bg-white border rounded-2xl p-4 shadow-sm space-y-3">
+            <h3 class="font-semibold">Próximos vencimientos</h3>
+            <ul class="space-y-2 text-sm">
+              <li v-if="proximosVencimientos.length===0" class="text-slate-500">Sin vencimientos próximos.</li>
+              <li v-for="t in proximosVencimientos" :key="t.id" class="flex items-center justify-between border-b py-2 last:border-0">
+                <span class="truncate">{{ t.title }} <span class="text-slate-500">• {{ projectName(t.project_id) }}</span></span>
+                <span class="text-xs text-slate-700">{{ formatDate(t.due_date) }}</span>
+              </li>
+            </ul>
+          </div>
+          <div class="bg-white border rounded-2xl p-4 shadow-sm space-y-3">
+            <h3 class="font-semibold">Últimas actividades</h3>
+            <ul class="space-y-2 text-sm">
+              <li v-if="ultimasActividades.length===0" class="text-slate-500">Aún no hay registros.</li>
+              <li v-for="a in ultimasActividades" :key="a.id" class="flex items-center justify-between border-b py-2 last:border-0">
+                <span class="truncate">{{ a.notes || a.sender || a.title || '(Sin descripción)' }}</span>
+                <span class="text-xs text-slate-700">{{ formatDate(a.date) }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Secciones CRUD -->
+      <section v-for="s in sectionsArray" :key="s.id" v-show="tab===s.id" class="bg-white border rounded-2xl p-4 shadow-sm space-y-6">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="font-semibold text-lg">{{ s.title }}</h2>
+          <div class="text-sm text-slate-500">{{ DB[s.id].length }} registros</div>
+        </div>
+        <form @submit.prevent="save(s.id, s.form, s.defaults)" class="grid md:grid-cols-6 gap-4">
+          <template v-for="field in s.fields" :key="field.key">
+            <div :class="field.span || 'md:col-span-1'">
+              <label class="block text-sm mb-1">{{ field.label }}</label>
+              <input v-if="['text','date','time'].includes(field.type)" :type="field.type" v-model="s.form[field.key]" class="w-full border rounded-xl px-3 py-2" :required="field.required" />
+              <select v-if="field.type==='select'" v-model="s.form[field.key]" class="w-full border rounded-xl px-3 py-2" :required="field.required">
+                <option :value="field.default" disabled>{{ field.placeholder || 'Selecciona' }}</option>
+                <option v-for="opt in field.options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+              <select v-if="field.type==='select-dynamic'" v-model="s.form[field.key]" class="w-full border rounded-xl px-3 py-2" :required="field.required">
+                <option :value="null" disabled>Selecciona un proyecto</option>
+                <option v-for="p in DB.projects" :key="p.id" :value="p.id">{{ p.name }}</option>
+              </select>
+              <textarea v-if="field.type==='textarea'" v-model.trim="s.form[field.key]" class="w-full border rounded-xl px-3 py-2" rows="2"></textarea>
+              <div v-if="field.type==='range'" class="flex items-center gap-2">
+                <input type="range" v-model.number="s.form[field.key]" min="0" max="100" class="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer" />
+                <span class="text-sm font-medium">{{ s.form[field.key] }}%</span>
+              </div>
+            </div>
+          </template>
+          <div class="md:col-span-6 flex items-center gap-2">
+            <button class="px-4 py-2 text-white rounded-xl" style="background:#6B1535">Guardar</button>
+            <button type="button" @click="resetForm(s.form, s.defaults)" class="px-4 py-2 bg-slate-100 rounded-xl hover:bg-slate-200">Limpiar</button>
+          </div>
+        </form>
+        <div class="overflow-auto">
+          <table class="w-full text-sm table">
+            <thead class="bg-slate-50">
+              <tr class="text-left">
+                <th v-for="h in s.headers" :key="h.key" class="p-2" :class="h.class">{{ h.label }}</th>
+                <th class="p-2 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="DB[s.id].length===0"><td :colspan="s.headers.length+1" class="p-4 text-center text-slate-500">No hay registros.</td></tr>
+              <tr v-for="item in DB[s.id]" :key="item.id" class="border-b">
+                <td v-for="h in s.headers" :key="h.key" class="p-2">
+                  <template v-if="h.key==='progress'"><div class="flex items-center progress-cell"><div class="w-full progress-wrap"><div class="progress-bar" :style="{width:item.progress+'%'}"></div></div><span class="progress-text">{{ item.progress }}%</span></div></template>
+                  <template v-else-if="h.format==='date'">{{ formatDate(item[h.key]) }}</template>
+                  <template v-else-if="h.format==='project'">{{ projectName(item[h.key]) }}</template>
+                  <template v-else-if="h.type==='badge-status'"><span class="badge" :class="statusClass(item[h.key])">{{ item[h.key] }}</span></template>
+                  <template v-else-if="h.type==='badge-priority'"><span class="badge" :class="priorityClass(item[h.key])">{{ item[h.key] }}</span></template>
+                  <template v-else>{{ item[h.key] || '—' }}</template>
+                </td>
+                <td class="p-2 text-right space-x-2">
+                  <button class="link" @click="edit(s.form, item)">Editar</button>
+                  <button class="text-rose-600 hover:underline" @click="del(s.id, item.id)">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Calendario -->
+      <section v-show="tab==='calendar'" class="bg-white border rounded-2xl p-4 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="font-semibold text-lg">Calendario operativo</h2>
+            <p class="text-sm text-slate-500">Controla eventos, tareas y turnos por día</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-2 border rounded-xl" @click="prevMonth">◀</button>
+            <div class="min-w-[180px] text-center font-medium capitalize">{{ calendarLabel }}</div>
+            <button class="px-3 py-2 border rounded-xl" @click="nextMonth">▶</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-7 gap-2 text-xs font-semibold uppercase text-slate-500">
+          <div class="text-center">Lun</div><div class="text-center">Mar</div><div class="text-center">Mié</div>
+          <div class="text-center">Jue</div><div class="text-center">Vie</div><div class="text-center">Sáb</div><div class="text-center">Dom</div>
+        </div>
+        <div class="grid grid-cols-7 gap-2">
+          <button v-for="cell in calendarDays" :key="cell.date" @click="selectDay(cell.date)"
+            class="border rounded-xl p-2 text-left calendar-day"
+            :class="[cell.date===selectedDay ? 'calendar-day--selected' : '', cell.date===todayStr() ? 'calendar-day--today' : '', cell.inMonth ? 'bg-white' : 'bg-slate-50 text-slate-400']">
+            <div class="text-sm font-medium">{{ cell.day }}</div>
+            <div v-if="dayItems(cell.date).length" class="text-[11px] mt-2" style="color:#6B1535">{{ dayItems(cell.date).length }} registros</div>
+          </button>
+        </div>
+        <div class="border-t pt-4">
+          <h3 class="font-medium mb-2">Actividades para {{ formatDate(selectedDay) }}</h3>
+          <ul v-if="calendarItems.length" class="space-y-2 text-sm">
+            <li v-for="item in calendarItems" :key="item.id + item.kind" class="flex items-center justify-between border-b py-2 last:border-0">
+              <span>{{ item.label }} <span class="text-slate-500">• {{ item.kind }}</span></span>
+              <span class="text-slate-500">{{ item.time || '' }}</span>
+            </li>
+          </ul>
+          <p v-else class="text-sm text-slate-500">Sin registros para este día.</p>
+        </div>
+      </section>
+
+      <!-- Gantt -->
+      <section v-show="tab==='gantt'" class="bg-white border rounded-2xl p-4 shadow-sm">
+        <h2 class="font-semibold text-lg mb-4">Diagrama de Gantt</h2>
+        <div id="gantt-container" class="overflow-auto"><div id="gantt" class="min-w-full"></div></div>
+      </section>
+
+      <!-- Gráficos -->
+      <section v-show="tab==='graficos'" class="bg-white border rounded-2xl p-4 shadow-sm">
+        <h2 class="font-semibold text-lg mb-4">Gráficos de desempeño</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div><h3 class="font-medium mb-2 text-sm">Tareas por estado</h3><div class="relative h-72"><canvas id="chart-estado"></canvas></div></div>
+          <div><h3 class="font-medium mb-2 text-sm">Turnos por prioridad</h3><div class="relative h-72"><canvas id="chart-prioridad-turnos"></canvas></div></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="text-center text-xs py-6" style="color:#6B1535">Secretaría de Turismo · Gestor de Proyectos · Operación y seguimiento de equipos</footer>
+</div>
+
+<script>
+const { createApp, reactive, ref, computed, onMounted, nextTick } = Vue;
+
+createApp({
+  setup() {
+
+    // ── Utilidades de fecha (zona horaria CDMX) ──────────────────────
+    function todayStr() {
+      return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
     }
-  }).mount('#app');
-  </script>
+    function nowStr() {
+      return new Date().toLocaleTimeString('en-GB', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+    }
+    function formatDate(d) {
+      if (!d) return '—';
+      try {
+        const [y, m, day] = String(d).slice(0, 10).split('-').map(Number);
+        return new Date(y, m - 1, day).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+      } catch { return d; }
+    }
+
+    // ── Estado Supabase ──────────────────────────────────────────────
+    const SUPA_KEY = 'gestor-supabase-v8';
+    const supabaseUrl  = ref('');
+    const supabaseKey  = ref('');
+    const supabaseConnected = ref(false);
+    const supabasePanelCollapsed = ref(false);
+    let supa = null;
+    let realtimeChannel = null;
+    let realtimeReady = false;
+
+    function initSupa() {
+      if (supabaseUrl.value && supabaseKey.value) {
+        supa = supabase.createClient(supabaseUrl.value, supabaseKey.value);
+      }
+    }
+
+    function loadSupaConfig() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('supabaseUrl')) supabaseUrl.value = decodeURIComponent(params.get('supabaseUrl'));
+        if (params.get('supabaseKey')) supabaseKey.value = decodeURIComponent(params.get('supabaseKey'));
+        const raw = localStorage.getItem(SUPA_KEY);
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (!supabaseUrl.value && p.url) supabaseUrl.value = p.url;
+          if (!supabaseKey.value && p.key) supabaseKey.value = p.key;
+        }
+      } catch (e) { console.warn(e); }
+      initSupa();
+    }
+
+    function guardarSupabase() {
+      localStorage.setItem(SUPA_KEY, JSON.stringify({ url: supabaseUrl.value, key: supabaseKey.value }));
+      initSupa();
+      fetchAll();
+    }
+
+    async function probarSupabase() {
+      if (!supa) { error.value = 'Configura la URL y la key primero.'; return; }
+      try {
+        const { error: e } = await supa.from('projects').select('id').limit(1);
+        if (e) throw e;
+        supabaseConnected.value = true;
+        error.value = 'Conexión correcta con Supabase.';
+      } catch (e) {
+        supabaseConnected.value = false;
+        error.value = 'No se pudo conectar: ' + e.message;
+      }
+    }
+
+    // ── Base de datos local ──────────────────────────────────────────
+    const STORE_KEY = 'gestor-v8-data';
+    const loading = ref(false);
+    const error   = ref(null);
+    const DB = reactive({ projects: [], tasks: [], activities: [], requests: [], communications: [], events: [] });
+
+    function snapshot() {
+      return { projects: DB.projects, tasks: DB.tasks, activities: DB.activities, requests: DB.requests, communications: DB.communications, events: DB.events };
+    }
+    function setDB(data) {
+      DB.projects       = data.projects       || [];
+      DB.tasks          = data.tasks          || [];
+      DB.activities     = data.activities     || [];
+      DB.requests       = data.requests       || [];
+      DB.communications = data.communications || [];
+      DB.events         = data.events         || [];
+    }
+    function saveLocal()  { localStorage.setItem(STORE_KEY, JSON.stringify(snapshot())); }
+    function loadLocal() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (raw) setDB(JSON.parse(raw));
+      } catch (e) { console.warn(e); }
+    }
+
+    // ── Fetch / CRUD ─────────────────────────────────────────────────
+    async function fetchTable(table) {
+      const { data, error: e } = await supa.from(table).select('*').order('id', { ascending: false });
+      if (e) throw e;
+      return data || [];
+    }
+
+    async function fetchAll() {
+      loading.value = true;
+      try {
+        if (!supa || !supabaseUrl.value || !supabaseKey.value) {
+          loadLocal();
+          supabaseConnected.value = false;
+          return;
+        }
+        const tables  = ['projects','tasks','activities','requests','communications','events'];
+        const results = await Promise.all(tables.map(t => fetchTable(t)));
+        tables.forEach((t, i) => { DB[t] = results[i]; });
+        saveLocal();
+        supabaseConnected.value  = true;
+        supabasePanelCollapsed.value = true;
+        setupRealtime();
+      } catch (e) {
+        supabaseConnected.value = false;
+        loadLocal();
+        error.value = 'No se pudieron cargar los datos: ' + e.message;
+      } finally {
+        loading.value = false;
+        hydrateViews();
+      }
+    }
+
+    function setupRealtime() {
+      if (!supa) return;
+      // Destruir canal previo siempre
+      if (realtimeChannel) {
+        supa.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
+      realtimeReady = false;
+      const tables = ['projects','tasks','activities','requests','communications','events'];
+      realtimeChannel = supa.channel('db-changes-' + Date.now());
+      tables.forEach(table => {
+        realtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, payload => {
+          if (payload.eventType === 'INSERT') {
+            // Solo agregar si el id NO existe ya (evita duplicado con INSERT local)
+            if (!DB[table].find(r => String(r.id) === String(payload.new.id))) {
+              DB[table].unshift(payload.new);
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            const idx = DB[table].findIndex(r => String(r.id) === String(payload.new.id));
+            if (idx >= 0) DB[table][idx] = payload.new;
+            else DB[table].unshift(payload.new);
+          } else if (payload.eventType === 'DELETE') {
+            DB[table] = DB[table].filter(r => String(r.id) !== String(payload.old.id));
+          }
+          saveLocal();
+        });
+      });
+      realtimeChannel.subscribe(status => {
+        realtimeReady = (status === 'SUBSCRIBED');
+      });
+    }
+
+    function cleanPayload(form, isNew) {
+      const p = {};
+      Object.entries(form).forEach(([k, v]) => {
+        if (isNew && k === 'id') return;
+        p[k] = (v === '' || v === null || v === undefined) ? null : v;
+      });
+      p.updated_at = new Date().toISOString();
+      return p;
+    }
+
+    async function save(table, form, defaults) {
+      loading.value = true;
+      error.value   = null;
+      const isNew   = !form.id;
+      const payload = cleanPayload(form, isNew);
+      try {
+        if (!supa || !supabaseConnected.value) throw new Error('Sin conexión a Supabase');
+        let res;
+        if (!isNew) {
+          res = await supa.from(table).update(payload).eq('id', form.id).select().single();
+        } else {
+          res = await supa.from(table).insert(payload).select().single();
+        }
+        if (res.error) throw res.error;
+        if (!isNew) {
+          const idx = DB[table].findIndex(r => String(r.id) === String(form.id));
+          if (idx >= 0) DB[table][idx] = res.data;
+          else DB[table].unshift(res.data);
+          saveLocal();
+        } else {
+          // INSERT: agregar al array local inmediatamente con id real de Supabase
+          // Realtime llegará después y lo ignorará porque el id ya existe
+          if (!DB[table].find(r => String(r.id) === String(res.data.id))) {
+            DB[table].unshift(res.data);
+          }
+          saveLocal();
+        }
+        resetForm(form, defaults);
+      } catch (e) {
+        if (isNew) {
+          DB[table].unshift({ ...payload, id: Date.now() });
+        } else {
+          const idx = DB[table].findIndex(r => r.id === form.id);
+          if (idx >= 0) DB[table][idx] = { ...DB[table][idx], ...payload };
+        }
+        saveLocal();
+        resetForm(form, defaults);
+        error.value = 'Se guardó localmente (sin conexión). ' + e.message;
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    async function del(table, id) {
+      if (!confirm('¿Seguro que quieres eliminar este registro?')) return;
+      loading.value = true;
+      error.value   = null;
+      try {
+        if (!supa || !supabaseConnected.value) throw new Error('Sin conexión');
+        const { error: e } = await supa.from(table).delete().eq('id', id);
+        if (e) throw e;
+        DB[table] = DB[table].filter(r => r.id !== id);
+        saveLocal();
+      } catch (e) {
+        DB[table] = DB[table].filter(r => r.id !== id);
+        saveLocal();
+        error.value = 'Se eliminó localmente. ' + e.message;
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    const edit      = (form, item) => Object.assign(form, JSON.parse(JSON.stringify(item)));
+    const resetForm = (form, defaults) => Object.assign(form, { ...defaults, id: null });
+
+    // ── Auth ─────────────────────────────────────────────────────────
+    const authMode    = ref('signin');
+    const authForm    = reactive({ email: '', password: '', name: '' });
+    const authLoading = ref(false);
+    const authError   = ref(null);
+    const user        = ref(null);
+
+    function getUserName() {
+      return user.value?.user_metadata?.name || user.value?.email || 'Miembro del equipo';
+    }
+
+    async function submitAuth() {
+      authLoading.value = true;
+      authError.value   = null;
+      if (!supa) { authError.value = 'Configura Supabase primero.'; authLoading.value = false; return; }
+      try {
+        if (authMode.value === 'signin') {
+          const { data, error: e } = await supa.auth.signInWithPassword({ email: authForm.email, password: authForm.password });
+          if (e) throw e;
+          user.value = data.user;
+        } else {
+          const { data, error: e } = await supa.auth.signUp({ email: authForm.email, password: authForm.password, options: { data: { name: authForm.name } } });
+          if (e) throw e;
+          user.value = data.user;
+          if (!data.session) authError.value = 'Revisa tu correo para confirmar la cuenta.';
+        }
+        await fetchAll();
+      } catch (e) { authError.value = e.message; }
+      finally { authLoading.value = false; }
+    }
+
+    function enterDemo() {
+      user.value = { email: 'demo@equipo.local', user_metadata: { name: 'Equipo demo' } };
+      fetchAll();
+    }
+
+    async function signOut() {
+      if (realtimeChannel) { supa.removeChannel(realtimeChannel); realtimeChannel = null; }
+      if (supa) await supa.auth.signOut();
+      user.value = null;
+      authForm.email = ''; authForm.password = ''; authForm.name = '';
+      loadLocal();
+    }
+
+    // ── Tabs y secciones ─────────────────────────────────────────────
+    const tab  = ref('resumen');
+    const tabs = [
+      { id: 'resumen',        label: 'Resumen'      },
+      { id: 'projects',       label: 'Proyectos'    },
+      { id: 'tasks',          label: 'Tareas'       },
+      { id: 'requests',       label: 'Turnos'       },
+      { id: 'events',         label: 'Eventos'      },
+      { id: 'communications', label: 'Documentos'   },
+      { id: 'activities',     label: 'Actividades'  },
+      { id: 'calendar',       label: 'Calendario'   },
+      { id: 'gantt',          label: 'Gantt'        },
+      { id: 'graficos',       label: 'Gráficos'     }
+    ];
+
+    const td = todayStr();
+    const tn = nowStr();
+
+    const fProjDef = { id:null, name:'', start_date:'', end_date:'', status:'Planificado', progress:0, notes:'' };
+    const fTaskDef = { id:null, project_id:null, title:'', start_date:'', due_date:'', responsible:'', priority:'Media', status:'Planificado', progress:0, notes:'' };
+    const fActDef  = { id:null, date:td, time:tn, person:'', notes:'' };
+    const fReqDef  = { id:null, identifier:'', sender:'', date:td, time:tn, notes:'', priority:'Media', status:'Pendiente', type:'Atender' };
+    const fComDef  = { id:null, project_id:null, identifier:'', recipient:'', date:td, subject:'', notes:'', type:'Oficio' };
+    const fEvtDef  = { id:null, title:'', date:td, time:tn, location:'', notes:'', type:'Reunión' };
+
+    const sections = reactive({
+      projects: {
+        id:'projects', title:'Proyectos', form:{...fProjDef}, defaults:fProjDef,
+        fields:[
+          { key:'name',       label:'Nombre',       type:'text',     required:true, span:'md:col-span-3' },
+          { key:'start_date', label:'Fecha Inicio',  type:'date' },
+          { key:'end_date',   label:'Fecha Fin',     type:'date' },
+          { key:'status',     label:'Estado',        type:'select',   default:'Planificado', options:[{value:'Planificado',label:'Planificado'},{value:'En curso',label:'En curso'},{value:'Pausado',label:'Pausado'},{value:'Completado',label:'Completado'},{value:'Cancelado',label:'Cancelado'}] },
+          { key:'notes',      label:'Notas',         type:'textarea', span:'md:col-span-4' },
+          { key:'progress',   label:'Progreso',      type:'range',    span:'md:col-span-2' }
+        ],
+        headers:[
+          { key:'name',       label:'Nombre' },
+          { key:'start_date', label:'Inicio',   format:'date' },
+          { key:'end_date',   label:'Fin',      format:'date' },
+          { key:'progress',   label:'Progreso', class:'progress-cell' },
+          { key:'status',     label:'Estado',   type:'badge-status' }
+        ]
+      },
+      tasks: {
+        id:'tasks', title:'Tareas', form:{...fTaskDef}, defaults:fTaskDef,
+        fields:[
+          { key:'project_id',  label:'Proyecto',     type:'select-dynamic', required:true, span:'md:col-span-2' },
+          { key:'title',       label:'Título',        type:'text',           required:true, span:'md:col-span-4' },
+          { key:'start_date',  label:'Inicio',        type:'date' },
+          { key:'due_date',    label:'Vence',         type:'date' },
+          { key:'responsible', label:'Responsable',   type:'text' },
+          { key:'priority',    label:'Prioridad',     type:'select',  default:'Media',       options:[{value:'Baja',label:'Baja'},{value:'Media',label:'Media'},{value:'Alta',label:'Alta'},{value:'Crítica',label:'Crítica'}] },
+          { key:'status',      label:'Estado',        type:'select',  default:'Planificado', options:[{value:'Planificado',label:'Planificado'},{value:'En Curso',label:'En Curso'},{value:'Pausado',label:'Pausado'},{value:'Completado',label:'Completado'}] },
+          { key:'notes',       label:'Notas',         type:'textarea', span:'md:col-span-4' },
+          { key:'progress',    label:'Progreso',      type:'range',    span:'md:col-span-2' }
+        ],
+        headers:[
+          { key:'title',      label:'Título' },
+          { key:'project_id', label:'Proyecto',  format:'project' },
+          { key:'due_date',   label:'Vence',     format:'date' },
+          { key:'progress',   label:'Progreso',  class:'progress-cell' },
+          { key:'priority',   label:'Prioridad', type:'badge-priority' },
+          { key:'status',     label:'Estado',    type:'badge-status' }
+        ]
+      },
+      activities: {
+        id:'activities', title:'Actividades generales', form:{...fActDef}, defaults:fActDef,
+        fields:[
+          { key:'person', label:'Persona', type:'text',     span:'md:col-span-2' },
+          { key:'date',   label:'Fecha',   type:'date' },
+          { key:'time',   label:'Hora',    type:'time' },
+          { key:'notes',  label:'Notas',   type:'textarea', span:'md:col-span-6' }
+        ],
+        headers:[
+          { key:'date',   label:'Fecha',   format:'date' },
+          { key:'time',   label:'Hora' },
+          { key:'person', label:'Persona' },
+          { key:'notes',  label:'Notas' }
+        ]
+      },
+      requests: {
+        id:'requests', title:'Turnos y solicitudes', form:{...fReqDef}, defaults:fReqDef,
+        fields:[
+          { key:'identifier', label:'ID Turno',    type:'text' },
+          { key:'sender',     label:'Remitente',   type:'text',   span:'md:col-span-2' },
+          { key:'date',       label:'Fecha',       type:'date' },
+          { key:'time',       label:'Hora',        type:'time' },
+          { key:'status',     label:'Estado',      type:'select', default:'Pendiente', options:[{value:'Pendiente',label:'Pendiente'},{value:'Atendido',label:'Atendido'}] },
+          { key:'priority',   label:'Prioridad',   type:'select', default:'Media', span:'md:col-span-2', options:[{value:'Baja',label:'Baja'},{value:'Media',label:'Media'},{value:'Alta',label:'Alta'},{value:'Urgente',label:'Urgente'}] },
+          { key:'type',       label:'Tipo',        type:'select', default:'Atender', span:'md:col-span-2', options:[{value:'Atender',label:'Atender'},{value:'Conocimiento',label:'Conocimiento'}] },
+          { key:'notes',      label:'Detalle',     type:'textarea', span:'md:col-span-6' }
+        ],
+        headers:[
+          { key:'identifier', label:'ID' },
+          { key:'date',       label:'Fecha',     format:'date' },
+          { key:'sender',     label:'Remitente' },
+          { key:'notes',      label:'Detalle' },
+          { key:'priority',   label:'Prioridad', type:'badge-priority' },
+          { key:'status',     label:'Estado',    type:'badge-status' }
+        ]
+      },
+      communications: {
+        id:'communications', title:'Oficios y comunicaciones', form:{...fComDef}, defaults:fComDef,
+        fields:[
+          { key:'project_id',  label:'Proyecto (opcional)',  type:'select-dynamic', span:'md:col-span-2' },
+          { key:'identifier',  label:'ID Documento',         type:'text' },
+          { key:'recipient',   label:'Destinatario',         type:'text',   span:'md:col-span-2' },
+          { key:'date',        label:'Fecha',                type:'date' },
+          { key:'type',        label:'Tipo',                 type:'select', default:'Oficio', options:[{value:'Oficio',label:'Oficio'},{value:'Tarjeta Informativa',label:'Tarjeta Informativa'}] },
+          { key:'subject',     label:'Asunto',               type:'text',   span:'md:col-span-5' },
+          { key:'notes',       label:'Notas adicionales',    type:'textarea', span:'md:col-span-6' }
+        ],
+        headers:[
+          { key:'identifier', label:'ID' },
+          { key:'date',       label:'Fecha',       format:'date' },
+          { key:'type',       label:'Tipo' },
+          { key:'subject',    label:'Asunto' },
+          { key:'recipient',  label:'Destinatario' },
+          { key:'project_id', label:'Proyecto',    format:'project' }
+        ]
+      },
+      events: {
+        id:'events', title:'Eventos del equipo', form:{...fEvtDef}, defaults:fEvtDef,
+        fields:[
+          { key:'title',    label:'Título',   type:'text',     required:true, span:'md:col-span-3' },
+          { key:'date',     label:'Fecha',    type:'date' },
+          { key:'time',     label:'Hora',     type:'time' },
+          { key:'type',     label:'Tipo',     type:'select',   default:'Reunión', options:[{value:'Reunión',label:'Reunión'},{value:'Capacitación',label:'Capacitación'},{value:'Entrega',label:'Entrega'},{value:'Otro',label:'Otro'}] },
+          { key:'location', label:'Lugar',    type:'text',     span:'md:col-span-2' },
+          { key:'notes',    label:'Detalle',  type:'textarea', span:'md:col-span-6' }
+        ],
+        headers:[
+          { key:'title',    label:'Título' },
+          { key:'date',     label:'Fecha',  format:'date' },
+          { key:'time',     label:'Hora' },
+          { key:'location', label:'Lugar' },
+          { key:'type',     label:'Tipo' }
+        ]
+      }
+    });
+
+    const sectionsArray = computed(() => Object.values(sections));
+
+    // ── KPIs ─────────────────────────────────────────────────────────
+    const projectName   = id => DB.projects.find(p => p.id === id)?.name || '—';
+    const statusClass   = s => ({ 'Planificado':'badge-gray','En Curso':'badge-blue','Pausado':'badge-yellow','Completado':'badge-green','En curso':'badge-blue','Pendiente':'badge-yellow','Atendido':'badge-green' }[s] || 'badge-gray');
+    const priorityClass = p => ({ 'Baja':'badge-gray','Media':'badge-blue','Alta':'badge-yellow','Crítica':'badge-red','Urgente':'badge-red' }[p] || 'badge-gray');
+
+    const kpi = computed(() => ({
+      proyectosActivos:  DB.projects.filter(p => p.status === 'En curso' || p.status === 'En Curso').length,
+      tareasAbiertas:    DB.tasks.filter(t => t.status !== 'Completado').length,
+      turnosPendientes:  DB.requests.filter(r => r.status === 'Pendiente').length,
+      eventosHoy:        DB.events.filter(e => e.date === todayStr()).length
+    }));
+
+    const proximosVencimientos = computed(() => {
+      const hoy = new Date(); const d7 = new Date(); d7.setDate(hoy.getDate() + 7);
+      return DB.tasks
+        .filter(t => t.due_date && new Date(t.due_date + 'T12:00:00') >= hoy && new Date(t.due_date + 'T12:00:00') <= d7)
+        .sort((a, b) => a.due_date.localeCompare(b.due_date));
+    });
+
+    const ultimasActividades = computed(() =>
+      [...DB.activities, ...DB.requests]
+        .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+        .slice(0, 6)
+    );
+
+    // ── Calendario ───────────────────────────────────────────────────
+    const monthCursor   = ref(new Date());
+    const selectedDay   = ref(todayStr());
+    const calendarLabel = computed(() => monthCursor.value.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }));
+
+    const calendarDays = computed(() => {
+      const year  = monthCursor.value.getFullYear();
+      const month = monthCursor.value.getMonth();
+      const firstDay  = new Date(year, month, 1);
+      const startWeek = (firstDay.getDay() + 6) % 7;
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const prevTotal = new Date(year, month, 0).getDate();
+      const cells = [];
+      const pad = n => String(n).padStart(2, '0');
+      const dateStr = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+      for (let i = startWeek - 1; i >= 0; i--)
+        cells.push({ day: prevTotal - i, inMonth: false, date: dateStr(month===0?year-1:year, month===0?11:month-1, prevTotal-i) });
+      for (let d = 1; d <= totalDays; d++)
+        cells.push({ day: d, inMonth: true, date: dateStr(year, month, d) });
+      let nd = 1;
+      while (cells.length % 7 !== 0)
+        cells.push({ day: nd++, inMonth: false, date: dateStr(month===11?year+1:year, month===11?0:month+1, nd-1) });
+      return cells;
+    });
+
+    function dayItems(date) {
+      const items = [];
+      DB.events.forEach(i   => { if (i.date === date)     items.push({ ...i, kind:'evento', label:i.title      || 'Evento' }); });
+      DB.tasks.forEach(i    => { if (i.due_date === date) items.push({ ...i, kind:'tarea',  label:i.title      || 'Tarea'  }); });
+      DB.requests.forEach(i => { if (i.date === date)     items.push({ ...i, kind:'turno',  label:i.identifier || 'Turno'  }); });
+      return items.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    }
+
+    const calendarItems = computed(() => dayItems(selectedDay.value));
+    const prevMonth = () => { const d = new Date(monthCursor.value); d.setMonth(d.getMonth()-1); monthCursor.value = d; };
+    const nextMonth = () => { const d = new Date(monthCursor.value); d.setMonth(d.getMonth()+1); monthCursor.value = d; };
+    const selectDay = date => { selectedDay.value = date; tab.value = 'calendar'; };
+
+    // ── Gantt y Gráficos ─────────────────────────────────────────────
+    let ganttInstance  = null;
+    let chartEstado    = null;
+    let chartPrioridad = null;
+
+    function renderGantt() {
+      const container = document.getElementById('gantt');
+      if (!container) return;
+      container.innerHTML = '';
+      ganttInstance = null;
+      const tasks = DB.tasks
+        .filter(t => t.start_date && t.due_date)
+        .map(t => ({ id: String(t.id), name: t.title, start: t.start_date, end: t.due_date, progress: t.progress || 0 }));
+      if (!tasks.length) {
+        container.innerHTML = '<div class="text-sm text-slate-500 p-4">Añade tareas con fechas para ver el Gantt.</div>';
+        return;
+      }
+      try { ganttInstance = new Gantt('#gantt', tasks, { view_mode: 'Week', language: 'es' }); } catch (e) { console.warn(e); }
+    }
+
+    function renderCharts() {
+      try {
+        const estados    = ['Planificado','En Curso','Pausado','Completado'];
+        const estCounts  = estados.map(s => DB.tasks.filter(t => t.status === s).length);
+        const priors     = ['Baja','Media','Alta','Urgente'];
+        const priorCounts= priors.map(p => DB.requests.filter(r => r.priority === p).length);
+
+        if (chartEstado)    { chartEstado.destroy();    chartEstado    = null; }
+        if (chartPrioridad) { chartPrioridad.destroy(); chartPrioridad = null; }
+
+        const ctxE = document.getElementById('chart-estado');
+        const ctxP = document.getElementById('chart-prioridad-turnos');
+        if (ctxE) chartEstado    = new Chart(ctxE, { type:'doughnut', data:{ labels:estados, datasets:[{ data:estCounts,  backgroundColor:['#e5e7eb','#f5e6eb','#fef9c3','#dcfce7'] }] }, options:{ responsive:true, maintainAspectRatio:false } });
+        if (ctxP) chartPrioridad = new Chart(ctxP, { type:'bar',      data:{ labels:priors,  datasets:[{ data:priorCounts, backgroundColor:['#e5e7eb','#f5e6eb','#fef9c3','#fee2e2'], borderRadius:6 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } } });
+      } catch (e) { console.warn(e); }
+    }
+
+    function hydrateViews() {
+      nextTick(() => {
+        if (tab.value === 'gantt')    renderGantt();
+        if (tab.value === 'graficos') renderCharts();
+      });
+    }
+
+    function onTabChange(t) {
+      tab.value = t;
+      nextTick(() => {
+        if (t === 'gantt')    renderGantt();
+        if (t === 'graficos') renderCharts();
+      });
+    }
+
+    // ── Exportar / Importar ──────────────────────────────────────────
+    function exportar() {
+      const blob = new Blob([JSON.stringify(snapshot(), null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `gestor-proyectos-${todayStr()}.json`;
+      a.click();
+    }
+
+    function importar(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          setDB(data);
+          saveLocal();
+          error.value = 'Datos importados correctamente.';
+        } catch { error.value = 'Error al leer el archivo.'; }
+      };
+      reader.readAsText(file);
+    }
+
+    // ── Montaje ──────────────────────────────────────────────────────
+    onMounted(() => {
+      loadSupaConfig();
+      loadLocal();
+      if (supa) fetchAll();
+    });
+
+    return {
+      todayStr, formatDate,
+      supabaseUrl, supabaseKey, supabaseConnected, supabasePanelCollapsed,
+      guardarSupabase, probarSupabase,
+      loading, error, DB,
+      save, del, edit, resetForm,
+      authMode, authForm, authLoading, authError, user,
+      getUserName, submitAuth, enterDemo, signOut,
+      tab, tabs, onTabChange,
+      sections, sectionsArray,
+      kpi, projectName, statusClass, priorityClass,
+      proximosVencimientos, ultimasActividades,
+      monthCursor, selectedDay, calendarLabel, calendarDays,
+      dayItems, calendarItems, prevMonth, nextMonth, selectDay,
+      exportar, importar
+    };
+  }
+}).mount('#app');
+</script>
 </body>
 </html>
