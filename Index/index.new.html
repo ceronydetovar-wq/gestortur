@@ -858,17 +858,41 @@ createApp({
       a.click();
     }
 
-    function importar(e) {
+    async function importar(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = ev => {
+      reader.onload = async ev => {
         try {
           const data = JSON.parse(ev.target.result);
-          setDB(data);
-          saveLocal();
-          error.value = 'Datos importados correctamente.';
-        } catch { error.value = 'Error al leer el archivo.'; }
+          loading.value = true;
+
+          if (supa && supabaseConnected.value) {
+            // Enviar cada registro a Supabase para que quede guardado en la nube
+            const tables = ['projects','tasks','activities','requests','communications','events'];
+            for (const table of tables) {
+              const rows = data[table] || [];
+              for (const row of rows) {
+                const payload = { ...row };
+                delete payload.id; // deja que Supabase asigne id nuevo y evite choques
+                payload.updated_at = new Date().toISOString();
+                const { error: e2 } = await supa.from(table).insert(payload);
+                if (e2) console.warn('Error importando en', table, e2.message);
+              }
+            }
+            await fetchAll();
+            error.value = 'Datos importados y guardados en Supabase correctamente.';
+          } else {
+            // Sin conexión: solo guarda localmente y avisa que no se sincronizó
+            setDB(data);
+            saveLocal();
+            error.value = 'Importado solo de forma local (sin conexión a Supabase). Conecta Supabase para que se guarde en la nube.';
+          }
+        } catch (err) {
+          error.value = 'Error al leer el archivo: ' + err.message;
+        } finally {
+          loading.value = false;
+        }
       };
       reader.readAsText(file);
     }
